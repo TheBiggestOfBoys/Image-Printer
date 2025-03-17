@@ -1,4 +1,6 @@
 ﻿using System.Drawing;
+using Image_Printer;
+using System;
 
 namespace Image_Resizer
 {
@@ -18,32 +20,19 @@ namespace Image_Resizer
 				int newWidth = image.Width / x;
 				int newHeight = image.Height / x;
 
+				float percentage = newWidth / image.Width;
+
 				string imageFileName = $"{imagePath.Split('\\')[^1].Split('.')[0]} {newWidth}x{newHeight}.{image.RawFormat}";
 
-				Bitmap resizedBitmap = ResizeImage(image, newWidth, newHeight);
+				ImagePrinter imagePrinter = new(imagePath);
+				imagePrinter.UpdateResolution(percentage);
+
+				Bitmap resizedBitmap = imagePrinter.Picture;
 
 				resizedBitmap.Save(folder + imageFileName, image.RawFormat);
 
 				Console.WriteLine($"Saved: {imageFileName}");
 			}
-		}
-
-		/// <summary>
-		/// Resizes an image to the given dimensions
-		/// </summary>
-		/// <param name="originalImage">The original image</param>
-		/// <param name="newWidth">The width resize to</param>
-		/// <param name="newHeight">The height to resize to</param>
-		/// <returns>The resized image</returns>
-		public static Bitmap ResizeImage(Bitmap originalImage, int newWidth, int newHeight)
-		{
-			Bitmap newImage = new(newWidth, newHeight);
-			using (Graphics graphicsHandle = Graphics.FromImage(newImage))
-			{
-				graphicsHandle.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-				graphicsHandle.DrawImage(originalImage, 0, 0, newWidth, newHeight);
-			}
-			return newImage;
 		}
 	}
 }

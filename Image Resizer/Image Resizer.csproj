@@ -3,10 +3,10 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
     <RootNamespace>Image_Resizer</RootNamespace>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
     <StartupObject>Image_Resizer.Program</StartupObject>
-    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion>8.0</SupportedOSPlatformVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="9.0.3" />

@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Image_Printer;
+using System;
 using System.Drawing;
 using System.IO;
 
@@ -7,15 +7,15 @@ namespace Un_Text_Filer
 {
 	internal class Program
 	{
-		private static readonly char[] ASCIIGrayscaleChars = [' ', '.', ',', '-', '~', '+', '*', '%', '$', '#', '@'];
-
 		static void Main()
 		{
+			ImagePrinter imagePrinter = new(new Bitmap(0, 0));
+
 			Console.Write("Enter path to '.txt' file: ");
 			string path = Console.ReadLine();
 			string name = path.Split('\\')[^1].Split('.')[0];
 
-			char[][] ASCIIarray = TextFileToArray(path);
+			char[,] ASCIIarray = TextFileToArray(path);
 
 			Bitmap image = ASCIItoImage(ASCIIarray);
 
@@ -27,15 +27,15 @@ namespace Un_Text_Filer
 		/// </summary>
 		/// <param name="array"></param>
 		/// <returns></returns>
-		public static Bitmap ASCIItoImage(char[][] array)
+		public static Bitmap ASCIItoImage(char[,] array)
 		{
-			Bitmap image = new(array[0].Length, array.Length);
+			Bitmap image = new(array.GetLength(0), array.Length);
 
 			for (int x = 0; x < array.Length; x++)
 			{
-				for (int y = 0; y < array[x].Length; y++)
+				for (int y = 0; y < array.GetLength(1); y++)
 				{
-					Color gray = CharacterToGrayscale(array[x][y]);
+					Color gray = CharacterToGrayscale(array[x, y]);
 					image.SetPixel(y, x, gray);
 				}
 			}
@@ -49,6 +49,7 @@ namespace Un_Text_Filer
 		/// <returns>The stepped grayscale color</returns>
 		public static Color CharacterToGrayscale(char character)
 		{
+			char[] ASCIIGrayscaleChars = [' ', '.', ',', '-', '~', '+', '*', '%', '$', '#', '@'];
 			int index = Array.IndexOf(ASCIIGrayscaleChars, character);
 			int grayValue = index * ((255 / ASCIIGrayscaleChars.Length) - 1);
 			return Color.FromArgb(grayValue, grayValue, grayValue);
@@ -59,19 +60,24 @@ namespace Un_Text_Filer
 		/// </summary>
 		/// <param name="filePath">The path of the text file</param>
 		/// <returns>2D char array of the text file</returns>
-		public static char[][] TextFileToArray(string filePath)
+		public static char[,] TextFileToArray(string filePath)
 		{
-			List<char[]> ASCIIlist = [];
-			StreamReader reader = new(filePath);
+			string[] lines = File.ReadAllLines(filePath);
 
-			while (!reader.EndOfStream)
+			int height = lines.Length;
+			int width = lines[0].Length;
+
+			char[,] array = new char[height, width];
+
+			for (int x = 0; x < height; x++)
 			{
-				string line = reader.ReadLine();
-				ASCIIlist.Add(line.ToCharArray());
+				for (int y = 0; y < height; y++)
+				{
+					array[x, y] = lines[x][y];
+				}
 			}
-			reader.Close();
 
-			return ASCIIlist.ToArray();
+			return array;
 		}
 	}
 }
