@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
+    <RootNamespace>Image_Printer_GUI</RootNamespace>
+    <Nullable>enable</Nullable>
+    <UseWPF>True</UseWPF>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <StartupObject>Image_Printer_GUI.App</StartupObject>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <UseWindowsForms>False</UseWindowsForms>
+  </PropertyGroup>
+  <ItemGroup>
+	  <PackageReference Include="System.Drawing.Common" Version="9.0.3" />
+	  <ProjectReference Include="..\Image Printer\Image Printer.csproj" />
+	  <Resource Include="SEGOEICONS.TTF" />
+  </ItemGroup>
+</Project>
