@@ -1,6 +1,7 @@
 ﻿using Image_Printer;
 using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -27,28 +28,27 @@ namespace Image_Printer_GUI
 		/// <returns>A string which is used to filter the selectable files</returns>
 		static string GenerateFilter()
 		{
-			string[][] formats = [
-				[ImageFormat.Bmp.ToString(), "*.bmp"],
-				[ImageFormat.Emf.ToString(), "*.emf"],
-				[ImageFormat.Exif.ToString(), "*.exif"],
-				[ImageFormat.Gif.ToString(), "*.gif"],
-				[ImageFormat.Icon.ToString(), "*.ico"],
-				[ImageFormat.Jpeg.ToString(), "*.jpeg;*.jpg;*.jpe;*.jfif;*.jif"],
-				[ImageFormat.Png.ToString(), " *.png"],
-				[ImageFormat.Tiff.ToString(), "*.tiff;*.tif"],
-				[ImageFormat.Wmf.ToString(), "*.wmf"]];
-
-			string codecFilter = string.Empty;
-			foreach (string[] format in formats)
+			Dictionary<ImageFormat, string> formats = new()
 			{
-				codecFilter += $"{format[0]} files ({format[1]})|{format[1]}|";
-			}
+				{ ImageFormat.Bmp, "*.bmp" },
+				{ ImageFormat.Emf, "*.emf" },
+				{ ImageFormat.Exif, "*.exif" },
+				{ ImageFormat.Gif, "*.gif" },
+				{ ImageFormat.Icon, "*.ico" },
+				{ ImageFormat.Jpeg, "*.jpeg;*.jpg;*.jpe;*.jfif;*.jif" },
+				{ ImageFormat.Png, "*.png" },
+				{ ImageFormat.Tiff, "*.tiff;*.tif" },
+				{ ImageFormat.Wmf, "*.wmf" }
+			};
 
-			string allFilter = $"All Picture Files|{string.Join(';', formats.Select(x => x[1]))}|";
+			// Generate individual filters
+			string codecFilter = string.Join('|', formats.Select(format => $"{format.Key} files ({format.Value})|{format.Value}"));
 
-			codecFilter += "All Files|*.*";
+			// Generate "All Picture Files" filter
+			string allFilter = $"All Picture Files|{string.Join(';', formats.Values)}";
 
-			return allFilter + codecFilter;
+			// Add "All Files" filter
+			return $"{allFilter}|{codecFilter}|All Files|*.*";
 		}
 
 		/// <summary>
@@ -142,8 +142,9 @@ namespace Image_Printer_GUI
 		/// </summary>
 		private void ResolutionValue_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
 		{
+			ResolutionValue.Value = Math.Round(ResolutionValue.Value, 2);
+			if (PercentageBox != null) PercentageBox.Text = (ResolutionValue.Value * 100).ToString();
 			imagePrinter.UpdateResolution(ResolutionValue.Value);
-			if (PercentageBox != null) PercentageBox.Text = $"{ResolutionValue.Value:P0}";
 			ImagePreview.Source = CreatePreviewImage(imagePrinter.Picture);
 		}
 
@@ -264,5 +265,19 @@ namespace Image_Printer_GUI
 		}
 		#endregion
 		#endregion
+
+		private void PercentageBox_LostFocus(object sender, RoutedEventArgs e)
+		{
+			if (double.TryParse(PercentageBox.Text, out double value))
+			{
+				ResolutionValue.Value = Math.Round(value / 100, 2);
+				imagePrinter.UpdateResolution(ResolutionValue.Value);
+				ImagePreview.Source = CreatePreviewImage(imagePrinter.Picture);
+			}
+			else
+			{
+				ResolutionValue.Value = 1;
+			}
+		}
 	}
 }

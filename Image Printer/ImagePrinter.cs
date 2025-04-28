@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.Text;
+using System;
 
 namespace Image_Printer
 {
@@ -79,15 +80,15 @@ namespace Image_Printer
 
 		public readonly string Name;
 
-		public string FileName => $"{Name} {Resolution:P}" + (Invert ? " Inverted" : "") + ".txt";
+		public string FileName => $"{Name} {Resolution}%" + (Invert ? " Inverted" : string.Empty) + ".txt";
 
 		#region ASCII Set
 		/// <summary>
 		/// The header of the selected ASCII set
 		/// </summary>
-		public ASCIISet selectedASCIISet { get; private set; } = ASCIISet.Default;
+		public ASCIISet SelectedASCIISet { get; private set; } = ASCIISet.Default;
 
-		private List<char> ChangeASCIISet() => selectedASCIISet switch
+		private List<char> ChangeASCIISet() => SelectedASCIISet switch
 		{
 			ASCIISet.Default => [.. OriginalASCIIGrayscaleChars],
 			ASCIISet.Numbers => [.. ASCIIGrayscaleNumbers],
@@ -102,7 +103,7 @@ namespace Image_Printer
 
 		public void SetASCIIGrayscaleChars(ASCIISet set)
 		{
-			selectedASCIISet = set;
+			SelectedASCIISet = set;
 			ASCIIGrayscaleChars = ChangeASCIISet();
 		}
 		#endregion
@@ -132,7 +133,7 @@ namespace Image_Printer
 
 		public ImagePrinter(string filePath, double resolution, bool invert, ASCIISet set) : this(filePath, resolution, invert)
 		{
-			selectedASCIISet = set;
+			SelectedASCIISet = set;
 		}
 
 		#region From Bitmap
@@ -155,7 +156,7 @@ namespace Image_Printer
 
 		public ImagePrinter(Bitmap image, double resolution, bool invert, ASCIISet set) : this(image, resolution, invert)
 		{
-			selectedASCIISet = set;
+			SelectedASCIISet = set;
 		}
 		#endregion
 		#endregion
@@ -189,11 +190,7 @@ namespace Image_Printer
 			float grayValue = color.GetBrightness();
 
 			// Calculate the index of the ASCII character representing the grayscale value
-			int index = (int)(grayValue * OriginalASCIIGrayscaleChars.Length);
-			if (index >= OriginalASCIIGrayscaleChars.Length)
-			{
-				index = OriginalASCIIGrayscaleChars.Length - 1;
-			}
+			int index = Math.Clamp((int)(grayValue * OriginalASCIIGrayscaleChars.Length), 0, OriginalASCIIGrayscaleChars.Length - 1);
 
 			// Return the ASCII character representing the grayscale value
 			return ASCIIGrayscaleChars[index];
@@ -234,11 +231,8 @@ namespace Image_Printer
 		public void UpdateResolution(double percent)
 		{
 			Resolution = percent;
-			int newWidth = (int)(OriginalPicture.Width * percent);
-			int newHeight = (int)(OriginalPicture.Height * percent);
-
-			if (newWidth < 1) newWidth = 1;
-			if (newHeight < 1) newHeight = 1;
+			int newWidth = Math.Max(1, (int)(OriginalPicture.Width * percent));
+			int newHeight = Math.Max(1, (int)(OriginalPicture.Height * percent));
 
 			Picture = ResizeImage(OriginalPicture, newWidth, newHeight);
 		}
