@@ -9,9 +9,19 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  build:
     runs-on: windows-latest
-    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: x86
+            rid: win-x86
+          - platform: x64
+            rid: win-x64
+          - platform: ARM64
+            rid: win-arm64
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,34 +35,53 @@ jobs:
         run: dotnet restore "Image Printer.sln"
       
       - name: Build solution
-        run: dotnet build "Image Printer.sln" --configuration Release --no-restore
+        run: dotnet build "Image Printer.sln" --configuration Release --no-restore -p:Platform=${{ matrix.platform }}
       
       - name: Publish Image Printer GUI
-        run: dotnet publish "Image Printer GUI/Image Printer GUI.csproj" --configuration Release --output ./publish/ImagePrinterGUI --no-build
+        run: dotnet publish "Image Printer GUI/Image Printer GUI.csproj" --configuration Release --output ./publish/ImagePrinterGUI --no-build -p:Platform=${{ matrix.platform }}
       
       - name: Publish Image Printer WinUI
-        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release --output ./publish/ImagePrinterWinUI --no-build
+        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release --output ./publish/ImagePrinterWinUI --no-build -p:Platform=${{ matrix.platform }} -p:RuntimeIdentifier=${{ matrix.rid }} -p:WindowsPackageType=None
       
       - name: Create ZIP archives
         run: |
-          Compress-Archive -Path ./publish/ImagePrinterGUI/* -DestinationPath ImagePrinterGUI-${{ github.ref_name }}.zip
-          Compress-Archive -Path ./publish/ImagePrinterWinUI/* -DestinationPath ImagePrinterWinUI-${{ github.ref_name }}.zip
+          New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
+          Compress-Archive -Path ./publish/ImagePrinterGUI/* -DestinationPath ./artifacts/ImagePrinterGUI-${{ matrix.platform }}.zip
+          Compress-Archive -Path ./publish/ImagePrinterWinUI/* -DestinationPath ./artifacts/ImagePrinterWinUI-${{ matrix.platform }}.zip
         shell: pwsh
-      
-      - name: Extract release notes
-        id: extract_notes
+
+      - name: Upload ZIP artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zips-${{ matrix.platform }}
+          path: ./artifacts/*.zip
+
+  release:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Set release tag
+        id: release_meta
         run: |
-          $tag = "${{ github.ref_name }}"
+          $tag = "ci-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          echo "TAG_NAME=$tag" >> $env:GITHUB_OUTPUT
           echo "RELEASE_NOTES=Release $tag" >> $env:GITHUB_OUTPUT
         shell: pwsh
-      
+
+      - name: Download ZIP artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: zips-*
+          merge-multiple: true
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            ImagePrinterGUI-${{ github.ref_name }}.zip
-            ImagePrinterWinUI-${{ github.ref_name }}.zip
-          body: ${{ steps.extract_notes.outputs.RELEASE_NOTES }}
+          tag_name: ${{ steps.release_meta.outputs.TAG_NAME }}
+          name: Release ${{ steps.release_meta.outputs.TAG_NAME }}
+          files: dist/**/*.zip
+          body: ${{ steps.release_meta.outputs.RELEASE_NOTES }}
           draft: false
           prerelease: false
         env:
