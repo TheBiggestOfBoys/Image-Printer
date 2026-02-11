@@ -25,12 +25,12 @@ jobs:
         run: dotnet restore "Image Printer.sln"
 
       - name: Publish Image Printer GUI
-        run: dotnet publish "Image Printer GUI/Image Printer GUI.csproj" --configuration Release --output ./publish/ImagePrinterGUI
+        run: dotnet publish "Image Printer GUI/Image Printer GUI.csproj" --configuration Release -p:PublishProfile=ClickOnce -p:PublishDir=./publish/ImagePrinterGUI/
 
       - name: Create ZIP archives
         run: |
           New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
-          Compress-Archive -Path ./publish/ImagePrinterGUI/* -DestinationPath ./artifacts/ImagePrinterGUI-AnyCPU.zip
+          Compress-Archive -Path ./publish/ImagePrinterGUI/* -DestinationPath ./artifacts/ImagePrinterGUI-ClickOnce.zip
         shell: pwsh
 
       - name: Upload ZIP artifacts
@@ -65,12 +65,12 @@ jobs:
         run: dotnet restore "Image Printer.sln"
 
       - name: Publish Image Printer WinUI
-        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release --output ./publish/ImagePrinterWinUI -p:Platform=${{ matrix.platform }} -p:RuntimeIdentifier=${{ matrix.rid }} -p:WindowsPackageType=None
+        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release --output ./publish/ImagePrinterWinUI -p:Platform=${{ matrix.platform }} -p:RuntimeIdentifier=${{ matrix.rid }} -p:WindowsPackageType=MSIX -p:GenerateAppxPackageOnBuild=true -p:AppxPackageDir=./publish/ImagePrinterWinUI/AppxPackages/ -p:AppxBundle=Never
 
       - name: Create ZIP archive
         run: |
           New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
-          Compress-Archive -Path ./publish/ImagePrinterWinUI/* -DestinationPath ./artifacts/ImagePrinterWinUI-${{ matrix.platform }}.zip
+          Compress-Archive -Path ./publish/ImagePrinterWinUI/AppxPackages/* -DestinationPath ./artifacts/ImagePrinterWinUI-MSIX-${{ matrix.platform }}.zip
         shell: pwsh
 
       - name: Upload ZIP artifacts
