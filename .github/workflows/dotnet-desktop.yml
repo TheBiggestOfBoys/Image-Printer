@@ -9,7 +9,37 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-gui:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'  # Adjust to your .NET version
+      
+      - name: Restore dependencies
+        run: dotnet restore "Image Printer.sln"
+
+      - name: Publish Image Printer GUI
+        run: dotnet publish "Image Printer GUI/Image Printer GUI.csproj" --configuration Release --output ./publish/ImagePrinterGUI
+
+      - name: Create ZIP archives
+        run: |
+          New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
+          Compress-Archive -Path ./publish/ImagePrinterGUI/* -DestinationPath ./artifacts/ImagePrinterGUI-AnyCPU.zip
+        shell: pwsh
+
+      - name: Upload ZIP artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zips-gui
+          path: ./artifacts/*.zip
+
+  build-winui:
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -25,39 +55,34 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'  # Adjust to your .NET version
-      
+
       - name: Restore dependencies
         run: dotnet restore "Image Printer.sln"
-      
-      - name: Build solution
-        run: dotnet build "Image Printer.sln" --configuration Release --no-restore -p:Platform=${{ matrix.platform }}
-      
-      - name: Publish Image Printer GUI
-        run: dotnet publish "Image Printer GUI/Image Printer GUI.csproj" --configuration Release --output ./publish/ImagePrinterGUI --no-build -p:Platform=${{ matrix.platform }}
-      
+
       - name: Publish Image Printer WinUI
-        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release --output ./publish/ImagePrinterWinUI --no-build -p:Platform=${{ matrix.platform }} -p:RuntimeIdentifier=${{ matrix.rid }} -p:WindowsPackageType=None
-      
-      - name: Create ZIP archives
+        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release --output ./publish/ImagePrinterWinUI -p:Platform=${{ matrix.platform }} -p:RuntimeIdentifier=${{ matrix.rid }} -p:WindowsPackageType=None
+
+      - name: Create ZIP archive
         run: |
           New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
-          Compress-Archive -Path ./publish/ImagePrinterGUI/* -DestinationPath ./artifacts/ImagePrinterGUI-${{ matrix.platform }}.zip
           Compress-Archive -Path ./publish/ImagePrinterWinUI/* -DestinationPath ./artifacts/ImagePrinterWinUI-${{ matrix.platform }}.zip
         shell: pwsh
 
       - name: Upload ZIP artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: zips-${{ matrix.platform }}
+          name: zips-winui-${{ matrix.platform }}
           path: ./artifacts/*.zip
 
   release:
-    needs: build
+    needs:
+      - build-gui
+      - build-winui
     runs-on: windows-latest
     steps:
       - name: Set release tag
