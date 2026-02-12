@@ -1,0 +1,163 @@
+name: Create Release
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  build-gui:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'  # Adjust to your .NET version
+      
+      - name: Restore dependencies
+        run: dotnet restore "Image Printer.sln"
+
+      - name: Publish Image Printer GUI
+        run: dotnet publish "Image Printer GUI/Image Printer GUI.csproj" --configuration Release -p:PublishProfile=ClickOnce.pubxml -p:PublishProtocol=ClickOnce -p:GenerateClickOnceManifests=true -p:Install=true -p:BootstrapperEnabled=true -p:PublishDir="${{ github.workspace }}\publish\ImagePrinterGUI\"
+
+      - name: Create ZIP archives
+        run: |
+          New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
+          if (-not (Test-Path -Path ./publish/ImagePrinterGUI)) { throw "ClickOnce publish output not found at ./publish/ImagePrinterGUI" }
+          if (-not (Test-Path -Path ./publish/ImagePrinterGUI/setup.exe)) { throw "ClickOnce setup.exe not found in ./publish/ImagePrinterGUI" }
+          Compress-Archive -Path ./publish/ImagePrinterGUI/* -DestinationPath ./artifacts/ImagePrinterGUI-ClickOnce.zip
+        shell: pwsh
+
+      - name: Upload ZIP artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zips-gui
+          path: ./artifacts/*.zip
+
+  build-winui:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: x86
+            rid: win-x86
+          - platform: x64
+            rid: win-x64
+          - platform: ARM64
+            rid: win-arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'  # Adjust to your .NET version
+
+      - name: Restore dependencies
+        run: dotnet restore "Image Printer.sln"
+
+      - name: Publish Image Printer WinUI
+        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release --output ./publish/ImagePrinterWinUI -p:Platform=${{ matrix.platform }} -p:RuntimeIdentifier=${{ matrix.rid }} -p:WindowsPackageType=MSIX -p:GenerateAppxPackageOnBuild=true -p:AppxPackageDir="${{ github.workspace }}\publish\ImagePrinterWinUI\AppxPackages\" -p:AppxBundle=Never
+
+      - name: Create ZIP archive
+        run: |
+          New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
+          if (-not (Test-Path -Path ./publish/ImagePrinterWinUI/AppxPackages)) { throw "MSIX output not found at ./publish/ImagePrinterWinUI/AppxPackages" }
+          Compress-Archive -Path ./publish/ImagePrinterWinUI/AppxPackages/* -DestinationPath ./artifacts/ImagePrinterWinUI-MSIX-${{ matrix.platform }}.zip
+        shell: pwsh
+
+      - name: Upload ZIP artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zips-winui-${{ matrix.platform }}
+          path: ./artifacts/*.zip
+
+  build-tools:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'  # Adjust to your .NET version
+
+      - name: Restore dependencies
+        run: dotnet restore "Image Printer.sln"
+
+      - name: Publish Image Printer
+        run: dotnet publish "Image Printer/Image Printer.csproj" --configuration Release --output ./publish/ImagePrinter
+
+      - name: Publish Image Resizer
+        run: dotnet publish "Image Resizer/Image Resizer.csproj" --configuration Release --output ./publish/ImageResizer
+
+      - name: Publish Un Text Filer
+        run: dotnet publish "Un Text Filer/Un Text Filer.csproj" --configuration Release --output ./publish/UnTextFiler
+
+      - name: Publish Video Printer
+        run: dotnet publish "Video Printer/Video Printer.csproj" --configuration Release --output ./publish/VideoPrinter
+
+      - name: Create ZIP archives
+        run: |
+          New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
+          if (-not (Test-Path -Path ./publish/ImagePrinter)) { throw "Image Printer publish output not found" }
+          if (-not (Test-Path -Path ./publish/ImageResizer)) { throw "Image Resizer publish output not found" }
+          if (-not (Test-Path -Path ./publish/UnTextFiler)) { throw "Un Text Filer publish output not found" }
+          if (-not (Test-Path -Path ./publish/VideoPrinter)) { throw "Video Printer publish output not found" }
+          Compress-Archive -Path ./publish/ImagePrinter/* -DestinationPath ./artifacts/ImagePrinter.zip
+          Compress-Archive -Path ./publish/ImageResizer/* -DestinationPath ./artifacts/ImageResizer.zip
+          Compress-Archive -Path ./publish/UnTextFiler/* -DestinationPath ./artifacts/UnTextFiler.zip
+          Compress-Archive -Path ./publish/VideoPrinter/* -DestinationPath ./artifacts/VideoPrinter.zip
+        shell: pwsh
+
+      - name: Upload ZIP artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zips-tools
+          path: ./artifacts/*.zip
+
+  release:
+    needs:
+      - build-gui
+      - build-winui
+      - build-tools
+    runs-on: windows-latest
+    steps:
+      - name: Set release tag
+        id: release_meta
+        run: |
+          $tag = "ci-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          echo "TAG_NAME=$tag" >> $env:GITHUB_OUTPUT
+          echo "RELEASE_NOTES=Release $tag" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Download ZIP artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: zips-*
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.release_meta.outputs.TAG_NAME }}
+          name: Release ${{ steps.release_meta.outputs.TAG_NAME }}
+          files: dist/**/*.zip
+          body: ${{ steps.release_meta.outputs.RELEASE_NOTES }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
