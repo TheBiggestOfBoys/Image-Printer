@@ -2,8 +2,8 @@ name: Create Release
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0, v2.1.3, etc.
 
 permissions:
   contents: write
@@ -84,6 +84,13 @@ jobs:
 
   build-tools:
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x86
+          - rid: win-x64
+          - rid: win-arm64
 
     steps:
       - name: Checkout code
@@ -97,35 +104,62 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore "Image Printer.sln"
 
+      - name: Decode and import certificate
+        run: |
+          $pfxBytes = [System.Convert]::FromBase64String("${{ secrets.CERTIFICATE_BASE64 }}")
+          $pfxPath = "$env:RUNNER_TEMP\cert.pfx"
+          [System.IO.File]::WriteAllBytes($pfxPath, $pfxBytes)
+
+          $pwd = ConvertTo-SecureString -String "${{ secrets.CERTIFICATE_PASSWORD }}" -Force -AsPlainText
+          $cert = Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation Cert:\CurrentUser\My -Password $pwd
+
+          echo "CERT_THUMBPRINT=$($cert.Thumbprint)" >> $env:GITHUB_ENV
+        shell: pwsh
+
       - name: Publish Image Printer
-        run: dotnet publish "Image Printer/Image Printer.csproj" --configuration Release --output ./publish/ImagePrinter
+        run: dotnet publish "Image Printer/Image Printer.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true --output ./publish/ImagePrinter-${{ matrix.rid }}
 
       - name: Publish Image Resizer
-        run: dotnet publish "Image Resizer/Image Resizer.csproj" --configuration Release --output ./publish/ImageResizer
+        run: dotnet publish "Image Resizer/Image Resizer.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true --output ./publish/ImageResizer-${{ matrix.rid }}
 
       - name: Publish Un Text Filer
-        run: dotnet publish "Un Text Filer/Un Text Filer.csproj" --configuration Release --output ./publish/UnTextFiler
+        run: dotnet publish "Un Text Filer/Un Text Filer.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true --output ./publish/UnTextFiler-${{ matrix.rid }}
 
       - name: Publish Video Printer
-        run: dotnet publish "Video Printer/Video Printer.csproj" --configuration Release --output ./publish/VideoPrinter
+        run: dotnet publish "Video Printer/Video Printer.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true --output ./publish/VideoPrinter-${{ matrix.rid }}
+
+      - name: Sign executables
+        run: |
+          $signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
+          if (-not (Test-Path $signtool)) {
+            Write-Warning "signtool not found, trying to locate..."
+            $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Select-Object -First 1 -ExpandProperty FullName
+          }
+
+          $exeFiles = Get-ChildItem -Path ./publish -Filter "*.exe" -Recurse
+          foreach ($exe in $exeFiles) {
+            Write-Host "Signing $($exe.FullName)..."
+            & $signtool sign /sha1 "${{ env.CERT_THUMBPRINT }}" /fd SHA256 /t http://timestamp.digicert.com $exe.FullName
+          }
+        shell: pwsh
 
       - name: Create ZIP archives
         run: |
           New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
-          if (-not (Test-Path -Path ./publish/ImagePrinter)) { throw "Image Printer publish output not found" }
-          if (-not (Test-Path -Path ./publish/ImageResizer)) { throw "Image Resizer publish output not found" }
-          if (-not (Test-Path -Path ./publish/UnTextFiler)) { throw "Un Text Filer publish output not found" }
-          if (-not (Test-Path -Path ./publish/VideoPrinter)) { throw "Video Printer publish output not found" }
-          Compress-Archive -Path ./publish/ImagePrinter/* -DestinationPath ./artifacts/ImagePrinter.zip
-          Compress-Archive -Path ./publish/ImageResizer/* -DestinationPath ./artifacts/ImageResizer.zip
-          Compress-Archive -Path ./publish/UnTextFiler/* -DestinationPath ./artifacts/UnTextFiler.zip
-          Compress-Archive -Path ./publish/VideoPrinter/* -DestinationPath ./artifacts/VideoPrinter.zip
+          if (-not (Test-Path -Path ./publish/ImagePrinter-${{ matrix.rid }})) { throw "Image Printer publish output not found" }
+          if (-not (Test-Path -Path ./publish/ImageResizer-${{ matrix.rid }})) { throw "Image Resizer publish output not found" }
+          if (-not (Test-Path -Path ./publish/UnTextFiler-${{ matrix.rid }})) { throw "Un Text Filer publish output not found" }
+          if (-not (Test-Path -Path ./publish/VideoPrinter-${{ matrix.rid }})) { throw "Video Printer publish output not found" }
+          Compress-Archive -Path ./publish/ImagePrinter-${{ matrix.rid }}/* -DestinationPath ./artifacts/ImagePrinter-${{ matrix.rid }}.zip
+          Compress-Archive -Path ./publish/ImageResizer-${{ matrix.rid }}/* -DestinationPath ./artifacts/ImageResizer-${{ matrix.rid }}.zip
+          Compress-Archive -Path ./publish/UnTextFiler-${{ matrix.rid }}/* -DestinationPath ./artifacts/UnTextFiler-${{ matrix.rid }}.zip
+          Compress-Archive -Path ./publish/VideoPrinter-${{ matrix.rid }}/* -DestinationPath ./artifacts/VideoPrinter-${{ matrix.rid }}.zip
         shell: pwsh
 
       - name: Upload ZIP artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: zips-tools
+          name: zips-tools-${{ matrix.rid }}
           path: ./artifacts/*.zip
 
   release:
@@ -135,12 +169,16 @@ jobs:
       - build-tools
     runs-on: windows-latest
     steps:
-      - name: Set release tag
-        id: release_meta
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
         run: |
-          $tag = "ci-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
-          echo "TAG_NAME=$tag" >> $env:GITHUB_OUTPUT
-          echo "RELEASE_NOTES=Release $tag" >> $env:GITHUB_OUTPUT
+          $tag = "${{ github.ref_name }}"
+          $version = $tag -replace '^v', ''
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "TAG=$tag" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
       - name: Download ZIP artifacts
@@ -153,10 +191,36 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.release_meta.outputs.TAG_NAME }}
-          name: Release ${{ steps.release_meta.outputs.TAG_NAME }}
-          files: dist/**/*.zip
-          body: ${{ steps.release_meta.outputs.RELEASE_NOTES }}
+          tag_name: ${{ steps.version.outputs.TAG }}
+          name: Release ${{ steps.version.outputs.TAG }}
+          files: dist/*.zip
+          body: |
+            ## Image Printer Suite Release ${{ steps.version.outputs.TAG }}
+
+            ### Downloads by Application Type
+
+            #### GUI Applications
+            - **Image Printer GUI (ClickOnce)** - Install and auto-update enabled
+            - **Image Printer WinUI (MSIX)** - Modern Windows 11 app with platform-specific packages
+
+            #### Command-Line Tools (Available for x86, x64, ARM64)
+            - **Image Printer** - Convert images to ASCII art
+            - **Video Printer** - Convert videos to ASCII art  
+            - **Image Resizer** - Batch resize images
+            - **Un Text Filer** - Text file utilities
+
+            ### Architecture Guide
+            - **x64** (64-bit Intel/AMD) - Most common for modern PCs
+            - **x86** (32-bit) - For older systems or 32-bit Windows
+            - **ARM64** - For ARM-based Windows devices (Surface Pro X, etc.)
+
+            ### Installation
+
+            **ClickOnce (GUI)**: Extract and run `setup.exe`
+
+            **MSIX (WinUI)**: Extract and install the `.msix` package for your architecture
+
+            **Command-Line Tools**: Extract the ZIP and run the `.exe` files directly (self-contained, no .NET required)
           draft: false
           prerelease: false
         env:
