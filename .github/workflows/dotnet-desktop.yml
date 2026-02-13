@@ -26,12 +26,12 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'  # Adjust to your .NET version
+          dotnet-version: '10.0.x'
 
       - name: Restore dependencies
         run: |
           dotnet nuget list source
-          dotnet restore "Image Printer.sln" --verbosity detailed
+          dotnet restore "Image Printer.slnx" --verbosity detailed
         continue-on-error: false
 
       - name: Publish Image Printer GUI
@@ -40,7 +40,7 @@ jobs:
       - name: Create ZIP archives
         run: |
           New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
-          $publishPath = "Image Printer GUI/bin/Release/net8.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
+          $publishPath = "Image Printer GUI/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
           if (-not (Test-Path -Path $publishPath)) { throw "GUI publish output not found at $publishPath" }
           Compress-Archive -Path "$publishPath/*" -DestinationPath ./artifacts/ImagePrinterGUI-${{ matrix.rid }}.zip
         shell: pwsh
@@ -71,23 +71,31 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'  # Adjust to your .NET version
+          dotnet-version: '10.0.x'
 
       - name: Restore dependencies
         run: |
           dotnet nuget list source
-          dotnet restore "Image Printer.sln" --verbosity detailed
+          dotnet restore "Image Printer.slnx" --verbosity detailed
         continue-on-error: false
 
       - name: Publish Image Printer WinUI
-        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }} -p:Platform=${{ matrix.platform }}
+        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release -p:Platform=${{ matrix.platform }} -p:GenerateAppxPackageOnBuild=true
 
       - name: Create ZIP archive
         run: |
           New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
-          $publishPath = "Image Printer WinUI/bin/Release/net8.0-windows10.0.26100.0/${{ matrix.platform }}/publish"
+          $publishPath = "Image Printer WinUI/bin/${{ matrix.platform }}/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
           if (-not (Test-Path -Path $publishPath)) { throw "WinUI publish output not found at $publishPath" }
           Compress-Archive -Path "$publishPath/*" -DestinationPath ./artifacts/ImagePrinterWinUI-${{ matrix.platform }}.zip
+        shell: pwsh
+
+      - name: Copy MSIX packages
+        run: |
+          $msixPath = "Image Printer WinUI/AppPackages"
+          if (Test-Path -Path $msixPath) {
+            Get-ChildItem -Path $msixPath -Filter "*.msix" -Recurse | Copy-Item -Destination ./artifacts/ -Force
+          }
         shell: pwsh
 
       - name: Upload ZIP artifacts
@@ -95,6 +103,13 @@ jobs:
         with:
           name: zips-winui-${{ matrix.platform }}
           path: ./artifacts/*.zip
+
+      - name: Upload MSIX artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: msix-winui-${{ matrix.platform }}
+          path: ./artifacts/*.msix
+        if: always()
 
   build-tools:
     runs-on: windows-latest
@@ -113,12 +128,12 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'  # Adjust to your .NET version
+          dotnet-version: '10.0.x'
 
       - name: Restore dependencies
         run: |
           dotnet nuget list source
-          dotnet restore "Image Printer.sln" --verbosity detailed
+          dotnet restore "Image Printer.slnx" --verbosity detailed
         continue-on-error: false
 
       - name: Decode and import certificate
@@ -132,6 +147,8 @@ jobs:
 
           echo "CERT_THUMBPRINT=$($cert.Thumbprint)" >> $env:GITHUB_ENV
         shell: pwsh
+        continue-on-error: true
+        if: ${{ secrets.CERTIFICATE_BASE64 != '' && secrets.CERTIFICATE_PASSWORD != '' }}
 
       - name: Publish Image Printer CLI
         run: dotnet publish "Image Printer CLI/Image Printer CLI.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }}
@@ -154,10 +171,10 @@ jobs:
           }
 
           $exeFiles = @(
-            "Image Printer CLI/bin/Release/net8.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe",
-            "Image Resizer/bin/Release/net8.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe",
-            "Un Text Filer/bin/Release/net8.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe",
-            "Video Printer/bin/Release/net8.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe"
+            "Image Printer CLI/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe",
+            "Image Resizer/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe",
+            "Un Text Filer/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe",
+            "Video Printer/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe"
           )
 
           foreach ($pattern in $exeFiles) {
@@ -168,11 +185,12 @@ jobs:
             }
           }
         shell: pwsh
+        if: ${{ env.CERT_THUMBPRINT != '' }}
 
       - name: Create ZIP archives
         run: |
           New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
-          $basePublishPath = "bin/Release/net8.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
+          $basePublishPath = "bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
 
           $projects = @(
             @{ Name = "Image Printer CLI"; Zip = "ImagePrinterCLI-${{ matrix.rid }}.zip" },
@@ -222,20 +240,35 @@ jobs:
           pattern: zips-*
           merge-multiple: true
 
+      - name: Download MSIX artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: msix-*
+          merge-multiple: true
+        continue-on-error: true
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.TAG }}
           name: Release ${{ steps.version.outputs.TAG }}
-          files: dist/*.zip
+          files: |
+            dist/*.zip
+            dist/*.msix
           body: |
             ## Image Printer Suite Release ${{ steps.version.outputs.TAG }}
 
             ### Downloads by Application Type
 
             #### GUI Applications
-            - **Image Printer GUI** - WPF-based desktop application for converting images to ASCII art
-            - **Image Printer WinUI** - Modern Windows app with platform-specific packages (x86, x64, ARM64)
+            - **Image Printer GUI** (ZIP) - WPF-based desktop application for converting images to ASCII art
+              - Available for: x86, x64, ARM64
+              - Requires: .NET 10 Desktop Runtime
+            - **Image Printer WinUI** (MSIX & ZIP) - Modern Windows app with native Windows 11 UI
+              - Available for: x86, x64, ARM64
+              - MSIX: Double-click to install (recommended)
+              - ZIP: Extract and run for portable mode
 
             #### Command-Line Tools (Available for x86, x64, ARM64)
             - **Image Printer CLI** - Convert images to ASCII art from the command line
@@ -250,9 +283,11 @@ jobs:
 
             ### Installation
 
-            **GUI Applications**: Extract the ZIP and run the executable. GUI apps require .NET 8 Desktop Runtime.
+            **WinUI MSIX Packages**: Double-click the `.msix` file to install. Provides automatic updates and easy uninstall.
 
-            **WinUI**: Extract and run the application for your architecture.
+            **WinUI ZIP Packages**: Extract the ZIP and run the executable for portable mode (no installation required).
+
+            **GUI Applications**: Extract the ZIP and run the executable. Requires .NET 10 Desktop Runtime.
 
             **Command-Line Tools**: Extract the ZIP and run the `.exe` files directly (self-contained, no .NET installation required).
           draft: false
