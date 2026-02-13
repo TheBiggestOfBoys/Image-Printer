@@ -11,34 +11,44 @@ permissions:
 jobs:
   build-gui:
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x86
+          - rid: win-x64
+          - rid: win-arm64
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'  # Adjust to your .NET version
-      
+
       - name: Restore dependencies
-        run: dotnet restore "Image Printer.sln"
+        run: |
+          dotnet nuget list source
+          dotnet restore "Image Printer.sln" --verbosity detailed
+        continue-on-error: false
 
       - name: Publish Image Printer GUI
-        run: dotnet publish "Image Printer GUI/Image Printer GUI.csproj" --configuration Release -p:PublishProfile=ClickOnce.pubxml -p:PublishProtocol=ClickOnce -p:GenerateClickOnceManifests=true -p:Install=true -p:BootstrapperEnabled=true -p:PublishDir="${{ github.workspace }}\publish\ImagePrinterGUI\"
+        run: dotnet publish "Image Printer GUI/Image Printer GUI.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }}
 
       - name: Create ZIP archives
         run: |
           New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
-          if (-not (Test-Path -Path ./publish/ImagePrinterGUI)) { throw "ClickOnce publish output not found at ./publish/ImagePrinterGUI" }
-          if (-not (Test-Path -Path ./publish/ImagePrinterGUI/setup.exe)) { throw "ClickOnce setup.exe not found in ./publish/ImagePrinterGUI" }
-          Compress-Archive -Path ./publish/ImagePrinterGUI/* -DestinationPath ./artifacts/ImagePrinterGUI-ClickOnce.zip
+          $publishPath = "Image Printer GUI/bin/Release/net8.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
+          if (-not (Test-Path -Path $publishPath)) { throw "GUI publish output not found at $publishPath" }
+          Compress-Archive -Path "$publishPath/*" -DestinationPath ./artifacts/ImagePrinterGUI-${{ matrix.rid }}.zip
         shell: pwsh
 
       - name: Upload ZIP artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: zips-gui
+          name: zips-gui-${{ matrix.rid }}
           path: ./artifacts/*.zip
 
   build-winui:
@@ -64,16 +74,20 @@ jobs:
           dotnet-version: '8.0.x'  # Adjust to your .NET version
 
       - name: Restore dependencies
-        run: dotnet restore "Image Printer.sln"
+        run: |
+          dotnet nuget list source
+          dotnet restore "Image Printer.sln" --verbosity detailed
+        continue-on-error: false
 
       - name: Publish Image Printer WinUI
-        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release --output ./publish/ImagePrinterWinUI -p:Platform=${{ matrix.platform }} -p:RuntimeIdentifier=${{ matrix.rid }} -p:WindowsPackageType=MSIX -p:GenerateAppxPackageOnBuild=true -p:AppxPackageDir="${{ github.workspace }}\publish\ImagePrinterWinUI\AppxPackages\" -p:AppxBundle=Never
+        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }} -p:Platform=${{ matrix.platform }}
 
       - name: Create ZIP archive
         run: |
           New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
-          if (-not (Test-Path -Path ./publish/ImagePrinterWinUI/AppxPackages)) { throw "MSIX output not found at ./publish/ImagePrinterWinUI/AppxPackages" }
-          Compress-Archive -Path ./publish/ImagePrinterWinUI/AppxPackages/* -DestinationPath ./artifacts/ImagePrinterWinUI-MSIX-${{ matrix.platform }}.zip
+          $publishPath = "Image Printer WinUI/bin/Release/net8.0-windows10.0.26100.0/${{ matrix.platform }}/publish"
+          if (-not (Test-Path -Path $publishPath)) { throw "WinUI publish output not found at $publishPath" }
+          Compress-Archive -Path "$publishPath/*" -DestinationPath ./artifacts/ImagePrinterWinUI-${{ matrix.platform }}.zip
         shell: pwsh
 
       - name: Upload ZIP artifacts
@@ -102,7 +116,10 @@ jobs:
           dotnet-version: '8.0.x'  # Adjust to your .NET version
 
       - name: Restore dependencies
-        run: dotnet restore "Image Printer.sln"
+        run: |
+          dotnet nuget list source
+          dotnet restore "Image Printer.sln" --verbosity detailed
+        continue-on-error: false
 
       - name: Decode and import certificate
         run: |
@@ -116,17 +133,17 @@ jobs:
           echo "CERT_THUMBPRINT=$($cert.Thumbprint)" >> $env:GITHUB_ENV
         shell: pwsh
 
-      - name: Publish Image Printer
-        run: dotnet publish "Image Printer/Image Printer.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true --output ./publish/ImagePrinter-${{ matrix.rid }}
+      - name: Publish Image Printer CLI
+        run: dotnet publish "Image Printer CLI/Image Printer CLI.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }}
 
       - name: Publish Image Resizer
-        run: dotnet publish "Image Resizer/Image Resizer.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true --output ./publish/ImageResizer-${{ matrix.rid }}
+        run: dotnet publish "Image Resizer/Image Resizer.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }}
 
       - name: Publish Un Text Filer
-        run: dotnet publish "Un Text Filer/Un Text Filer.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true --output ./publish/UnTextFiler-${{ matrix.rid }}
+        run: dotnet publish "Un Text Filer/Un Text Filer.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }}
 
       - name: Publish Video Printer
-        run: dotnet publish "Video Printer/Video Printer.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true --output ./publish/VideoPrinter-${{ matrix.rid }}
+        run: dotnet publish "Video Printer/Video Printer.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }}
 
       - name: Sign executables
         run: |
@@ -136,24 +153,41 @@ jobs:
             $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Select-Object -First 1 -ExpandProperty FullName
           }
 
-          $exeFiles = Get-ChildItem -Path ./publish -Filter "*.exe" -Recurse
-          foreach ($exe in $exeFiles) {
-            Write-Host "Signing $($exe.FullName)..."
-            & $signtool sign /sha1 "${{ env.CERT_THUMBPRINT }}" /fd SHA256 /t http://timestamp.digicert.com $exe.FullName
+          $exeFiles = @(
+            "Image Printer CLI/bin/Release/net8.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe",
+            "Image Resizer/bin/Release/net8.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe",
+            "Un Text Filer/bin/Release/net8.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe",
+            "Video Printer/bin/Release/net8.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe"
+          )
+
+          foreach ($pattern in $exeFiles) {
+            $files = Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue
+            foreach ($exe in $files) {
+              Write-Host "Signing $($exe.FullName)..."
+              & $signtool sign /sha1 "${{ env.CERT_THUMBPRINT }}" /fd SHA256 /t http://timestamp.digicert.com $exe.FullName
+            }
           }
         shell: pwsh
 
       - name: Create ZIP archives
         run: |
           New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
-          if (-not (Test-Path -Path ./publish/ImagePrinter-${{ matrix.rid }})) { throw "Image Printer publish output not found" }
-          if (-not (Test-Path -Path ./publish/ImageResizer-${{ matrix.rid }})) { throw "Image Resizer publish output not found" }
-          if (-not (Test-Path -Path ./publish/UnTextFiler-${{ matrix.rid }})) { throw "Un Text Filer publish output not found" }
-          if (-not (Test-Path -Path ./publish/VideoPrinter-${{ matrix.rid }})) { throw "Video Printer publish output not found" }
-          Compress-Archive -Path ./publish/ImagePrinter-${{ matrix.rid }}/* -DestinationPath ./artifacts/ImagePrinter-${{ matrix.rid }}.zip
-          Compress-Archive -Path ./publish/ImageResizer-${{ matrix.rid }}/* -DestinationPath ./artifacts/ImageResizer-${{ matrix.rid }}.zip
-          Compress-Archive -Path ./publish/UnTextFiler-${{ matrix.rid }}/* -DestinationPath ./artifacts/UnTextFiler-${{ matrix.rid }}.zip
-          Compress-Archive -Path ./publish/VideoPrinter-${{ matrix.rid }}/* -DestinationPath ./artifacts/VideoPrinter-${{ matrix.rid }}.zip
+          $basePublishPath = "bin/Release/net8.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
+
+          $projects = @(
+            @{ Name = "Image Printer CLI"; Zip = "ImagePrinterCLI-${{ matrix.rid }}.zip" },
+            @{ Name = "Image Resizer"; Zip = "ImageResizer-${{ matrix.rid }}.zip" },
+            @{ Name = "Un Text Filer"; Zip = "UnTextFiler-${{ matrix.rid }}.zip" },
+            @{ Name = "Video Printer"; Zip = "VideoPrinter-${{ matrix.rid }}.zip" }
+          )
+
+          foreach ($project in $projects) {
+            $publishPath = "$($project.Name)/$basePublishPath"
+            if (-not (Test-Path -Path $publishPath)) { 
+              throw "$($project.Name) publish output not found at $publishPath" 
+            }
+            Compress-Archive -Path "$publishPath/*" -DestinationPath "./artifacts/$($project.Zip)"
+          }
         shell: pwsh
 
       - name: Upload ZIP artifacts
@@ -199,13 +233,13 @@ jobs:
 
             ### Downloads by Application Type
 
-            #### GUI Applications
-            - **Image Printer GUI (ClickOnce)** - Install and auto-update enabled
-            - **Image Printer WinUI (MSIX)** - Modern Windows 11 app with platform-specific packages
+            #### GUI Applications (Available for x86, x64, ARM64)
+            - **Image Printer GUI** - WPF-based desktop application for converting images to ASCII art
+            - **Image Printer WinUI** - Modern Windows app with WinUI 3 interface
 
             #### Command-Line Tools (Available for x86, x64, ARM64)
-            - **Image Printer** - Convert images to ASCII art
-            - **Video Printer** - Convert videos to ASCII art  
+            - **Image Printer CLI** - Convert images to ASCII art from the command line
+            - **Video Printer** - Convert videos to ASCII art frames
             - **Image Resizer** - Batch resize images
             - **Un Text Filer** - Text file utilities
 
@@ -216,11 +250,7 @@ jobs:
 
             ### Installation
 
-            **ClickOnce (GUI)**: Extract and run `setup.exe`
-
-            **MSIX (WinUI)**: Extract and install the `.msix` package for your architecture
-
-            **Command-Line Tools**: Extract the ZIP and run the `.exe` files directly (self-contained, no .NET required)
+            **All Applications**: Extract the ZIP and run the executable directly. All apps are self-contained with the .NET runtime included - no separate .NET installation required!
           draft: false
           prerelease: false
         env:

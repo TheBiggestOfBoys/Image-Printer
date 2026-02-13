@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11010.61 d18.0
+VisualStudioVersion = 18.0.11010.61
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Image Printer GUI", "Image Printer GUI\Image Printer GUI.csproj", "{37093507-B924-4321-B85A-03F840E65D96}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -29,9 +29,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Un Text Filer", "Un Text Filer\Un Text Filer.csproj", "{FF827A23-AFCB-44FF-8685-656CA483C818}"
 EndProject
-Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "Image Printer WinUI Packaging (Package)", "Image Printer WinUI Packaging\Image Printer WinUI Packaging (Package)\Image Printer WinUI Packaging (Package).wapproj", "{FC30BC45-CC31-4935-920E-F83188322669}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image Printer WinUI Packaging", "Image Printer WinUI Packaging\Image Printer WinUI Packaging\Image Printer WinUI Packaging.csproj", "{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image Printer CLI", "Image Printer CLI\Image Printer CLI.csproj", "{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -149,46 +147,22 @@ Global
 		{FF827A23-AFCB-44FF-8685-656CA483C818}.Release|x64.Build.0 = Release|Any CPU
 		{FF827A23-AFCB-44FF-8685-656CA483C818}.Release|x86.ActiveCfg = Release|Any CPU
 		{FF827A23-AFCB-44FF-8685-656CA483C818}.Release|x86.Build.0 = Release|Any CPU
-		{FC30BC45-CC31-4935-920E-F83188322669}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Debug|Any CPU.Build.0 = Debug|x64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Debug|Any CPU.Deploy.0 = Debug|x64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Debug|ARM64.ActiveCfg = Debug|ARM64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Debug|ARM64.Build.0 = Debug|ARM64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Debug|ARM64.Deploy.0 = Debug|ARM64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Debug|x64.ActiveCfg = Debug|x64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Debug|x64.Build.0 = Debug|x64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Debug|x64.Deploy.0 = Debug|x64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Debug|x86.ActiveCfg = Debug|x86
-		{FC30BC45-CC31-4935-920E-F83188322669}.Debug|x86.Build.0 = Debug|x86
-		{FC30BC45-CC31-4935-920E-F83188322669}.Debug|x86.Deploy.0 = Debug|x86
-		{FC30BC45-CC31-4935-920E-F83188322669}.Release|Any CPU.ActiveCfg = Release|x64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Release|Any CPU.Build.0 = Release|x64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Release|Any CPU.Deploy.0 = Release|x64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Release|ARM64.ActiveCfg = Release|ARM64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Release|ARM64.Build.0 = Release|ARM64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Release|ARM64.Deploy.0 = Release|ARM64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Release|x64.ActiveCfg = Release|x64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Release|x64.Build.0 = Release|x64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Release|x64.Deploy.0 = Release|x64
-		{FC30BC45-CC31-4935-920E-F83188322669}.Release|x86.ActiveCfg = Release|x86
-		{FC30BC45-CC31-4935-920E-F83188322669}.Release|x86.Build.0 = Release|x86
-		{FC30BC45-CC31-4935-920E-F83188322669}.Release|x86.Deploy.0 = Release|x86
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Debug|Any CPU.Build.0 = Debug|x64
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Debug|ARM64.ActiveCfg = Debug|ARM64
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Debug|ARM64.Build.0 = Debug|ARM64
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Debug|x64.ActiveCfg = Debug|x64
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Debug|x64.Build.0 = Debug|x64
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Debug|x86.ActiveCfg = Debug|x86
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Debug|x86.Build.0 = Debug|x86
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Release|Any CPU.ActiveCfg = Release|x64
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Release|Any CPU.Build.0 = Release|x64
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Release|ARM64.ActiveCfg = Release|ARM64
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Release|ARM64.Build.0 = Release|ARM64
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Release|x64.ActiveCfg = Release|x64
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Release|x64.Build.0 = Release|x64
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Release|x86.ActiveCfg = Release|x86
-		{D34FA3A2-1EB1-49B7-AA15-7C264D3D6B66}.Release|x86.Build.0 = Release|x86
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Debug|x64.Build.0 = Debug|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Debug|x86.Build.0 = Debug|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Release|ARM64.Build.0 = Release|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Release|x64.ActiveCfg = Release|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Release|x64.Build.0 = Release|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Release|x86.ActiveCfg = Release|Any CPU
+		{3BCD39F4-0EF7-45DA-8272-FFEBB856CDBD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

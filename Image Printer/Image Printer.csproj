@@ -1,17 +1,18 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
     <RootNamespace>Image_Printer</RootNamespace>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <StartupObject>Image_Printer.Program</StartupObject>
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="9.0.3" />
+    <Compile Remove="Saved ASCII\**" />
+    <EmbeddedResource Remove="Saved ASCII\**" />
+    <None Remove="Saved ASCII\**" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Saved ASCII\" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.11" />
   </ItemGroup>
 </Project>

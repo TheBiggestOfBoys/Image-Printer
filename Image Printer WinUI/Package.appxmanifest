@@ -10,7 +10,7 @@
   <Identity
     Name="0e39eb40-f171-41a7-9399-3eef5493908e"
     Publisher="CN=jrsco"
-    Version="1.0.0.0" />
+    Version="1.0.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="0e39eb40-f171-41a7-9399-3eef5493908e" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
@@ -35,7 +35,7 @@
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
         DisplayName="Image Printer WinUI"
-        Description="This app converts an image to ASCII tect"
+        Description="This app converts an image to ASCII text"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
