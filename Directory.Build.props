@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <!-- Common target framework for all projects -->
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+
+    <!-- Windows platform settings -->
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+
+    <!-- Language settings - most projects use disable, can be overridden per project -->
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+</Project>

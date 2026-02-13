@@ -1,0 +1,18 @@
+<Project>
+  <!-- Enable Central Package Management -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Common packages used across multiple projects -->
+    <PackageVersion Include="System.Drawing.Common" Version="10.0.3" />
+    
+    <!-- WinUI specific packages -->
+    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="1.8.260209005" />
+    <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7705" />
+    
+    <!-- Video Printer specific packages -->
+    <PackageVersion Include="OpenCvSharp4.Windows" Version="4.13.0.20260211" />
+  </ItemGroup>
+</Project>

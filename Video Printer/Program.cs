@@ -2,6 +2,7 @@
 using OpenCvSharp;
 using System;
 using System.Drawing;
+using System.IO;
 using System.Threading;
 
 namespace Video_Printer
@@ -11,7 +12,7 @@ namespace Video_Printer
 		static void Main()
 		{
 			// Path is relative to working directory of the app
-			string outputPath = "C:\\Users\\jrsco\\source\\repos\\Image Printer\\Video Printer\\Frames";
+			string outputPath = Directory.GetCurrentDirectory() + "\\Frames";
 
 			Console.Write("Enter path to video file: ");
 			string videoFile = Console.ReadLine();

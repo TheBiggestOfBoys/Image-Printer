@@ -1,6 +1,7 @@
-﻿using System.Drawing;
-using Image_Printer;
+﻿using Image_Printer;
 using System;
+using System.Drawing;
+using System.IO;
 
 namespace Image_Resizer
 {
@@ -13,7 +14,7 @@ namespace Image_Resizer
 
 			Bitmap image = new(imagePath);
 
-			string folder = "C:\\Users\\jrsco\\source\\repos\\Image Printer\\Image Resizer\\Resized Images\\";
+			string folder = Path.GetDirectoryName(imagePath);
 
 			for (int x = 2; x <= 256; x *= 2)
 			{
