@@ -233,9 +233,9 @@ jobs:
 
             ### Downloads by Application Type
 
-            #### GUI Applications (Available for x86, x64, ARM64)
+            #### GUI Applications
             - **Image Printer GUI** - WPF-based desktop application for converting images to ASCII art
-            - **Image Printer WinUI** - Modern Windows app with WinUI 3 interface
+            - **Image Printer WinUI** - Modern Windows app with platform-specific packages (x86, x64, ARM64)
 
             #### Command-Line Tools (Available for x86, x64, ARM64)
             - **Image Printer CLI** - Convert images to ASCII art from the command line
@@ -250,7 +250,11 @@ jobs:
 
             ### Installation
 
-            **All Applications**: Extract the ZIP and run the executable directly. All apps are self-contained with the .NET runtime included - no separate .NET installation required!
+            **GUI Applications**: Extract the ZIP and run the executable. GUI apps require .NET 8 Desktop Runtime.
+
+            **WinUI**: Extract and run the application for your architecture.
+
+            **Command-Line Tools**: Extract the ZIP and run the `.exe` files directly (self-contained, no .NET installation required).
           draft: false
           prerelease: false
         env:

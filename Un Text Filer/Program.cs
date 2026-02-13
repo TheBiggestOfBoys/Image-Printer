@@ -1,5 +1,4 @@
-﻿using Image_Printer;
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
 
@@ -9,8 +8,6 @@ namespace Un_Text_Filer
 	{
 		static void Main()
 		{
-			ImagePrinter imagePrinter = new(new Bitmap(0, 0));
-
 			Console.Write("Enter path to '.txt' file: ");
 			string path = Console.ReadLine();
 			string name = path.Split('\\')[^1].Split('.')[0];
@@ -19,7 +16,8 @@ namespace Un_Text_Filer
 
 			Bitmap image = ASCIItoImage(ASCIIarray);
 
-			image.Save($"C:\\Users\\jrsco\\source\\repos\\Image Printer\\Un Text Filer\\GrayScale Images\\{name}.bmp");
+			string savePath = Path.GetDirectoryName(path);
+			image.Save(savePath + '\\' + name + ".bmp");
 		}
 
 		/// <summary>

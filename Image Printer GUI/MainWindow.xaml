@@ -40,13 +40,13 @@
             <TextBox Text="#" Width="25" FontSize="20" MaxLength="1"/>
         </ListBox>
         <Label Grid.Column="1" Content="ASCII Characters:" HorizontalAlignment="Left" Margin="10,19,0,0" Grid.Row="2" VerticalAlignment="Top" FontWeight="Bold"/>
-        <Button x:Name="DefaultASCII" Grid.Column="1" Content="&#xE72C;" HorizontalAlignment="Left" Height="27" Margin="121,19,0,0" Grid.Row="2" VerticalAlignment="Top" Width="29" FontFamily="Segoe Fluent Icons" FontSize="14" Click="DefaultASCII_Click"/>
+        <Button x:Name="DefaultASCII" Grid.Column="1" Content="&#xE72C;" HorizontalAlignment="Left" Height="27" Margin="121,19,0,0" Grid.Row="2" VerticalAlignment="Top" Width="29" FontFamily="Segoe MDL2 Assets" FontSize="14" Click="DefaultASCII_Click"/>
         <Button x:Name="SubtractCharacter" Grid.Column="1" Content="-" HorizontalAlignment="Left" Height="21" Margin="20,246,0,0" Grid.Row="2" VerticalAlignment="Top" Width="20" Click="SubtractCharacter_Click" FontSize="14"/>
         <Button x:Name="AddCharacter" Grid.Column="1" Content="+" HorizontalAlignment="Left" Height="21" Margin="72,246,0,0" Grid.Row="2" VerticalAlignment="Top" Width="20" Click="AddCharacter_Click" FontSize="14"/>
         <Menu x:Name="ASCIISetPicker" Grid.Column="1" HorizontalAlignment="Left" Height="164" Margin="125,75,0,0" Grid.Row="2" VerticalAlignment="Top" Width="100" FontSize="14">
             <MenuItem Header="Default" Click="MenuItem_Click"/>
         </Menu>
-        <Button x:Name="SyncButton" Grid.Column="1" Content="&#xE895;" HorizontalAlignment="Left" Height="21" Margin="45,246,0,0" Grid.Row="2" VerticalAlignment="Top" Width="22" FontFamily="Segoe Fluent Icons" FontSize="14" Click="SyncButton_Click"/>
+        <Button x:Name="SyncButton" Grid.Column="1" Content="&#xE895;" HorizontalAlignment="Left" Height="21" Margin="45,246,0,0" Grid.Row="2" VerticalAlignment="Top" Width="22" FontFamily="Segoe MDL2 Assets" FontSize="14" Click="SyncButton_Click"/>
         <TextBox x:Name="PercentageBox" HorizontalAlignment="Left" Height="19" Margin="290,6,0,0" TextWrapping="Wrap" Text="100" VerticalAlignment="Top" Width="27" TextChanged="PercentageBox_LostFocus"/>
     </Grid>
 </Window>
