@@ -148,7 +148,6 @@ jobs:
           echo "CERT_THUMBPRINT=$($cert.Thumbprint)" >> $env:GITHUB_ENV
         shell: pwsh
         continue-on-error: true
-        if: ${{ secrets.CERTIFICATE_BASE64 != '' && secrets.CERTIFICATE_PASSWORD != '' }}
 
       - name: Publish Image Printer CLI
         run: dotnet publish "Image Printer CLI/Image Printer CLI.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }}
