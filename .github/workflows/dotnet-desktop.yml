@@ -2,8 +2,8 @@ name: Create Release
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
@@ -175,13 +175,34 @@ jobs:
       - name: Publish Video Printer
         run: dotnet publish "Video Printer/Video Printer.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true --output "Video Printer/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
 
+      - name: List publish outputs
+        run: |
+          Write-Host "=== Image Printer CLI ==="
+          Get-ChildItem -Path "Image Printer CLI/bin" -Recurse -ErrorAction SilentlyContinue | Select-Object FullName
+          Write-Host "`n=== Image Resizer ==="
+          Get-ChildItem -Path "Image Resizer/bin" -Recurse -ErrorAction SilentlyContinue | Select-Object FullName
+          Write-Host "`n=== Un Text Filer ==="
+          Get-ChildItem -Path "Un Text Filer/bin" -Recurse -ErrorAction SilentlyContinue | Select-Object FullName
+          Write-Host "`n=== Video Printer ==="
+          Get-ChildItem -Path "Video Printer/bin" -Recurse -ErrorAction SilentlyContinue | Select-Object FullName
+        shell: pwsh
+        continue-on-error: true
+
       - name: Sign executables
         run: |
+          # Always use x64 signtool since the runner is x64 (even when building ARM64 binaries)
           $signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
           if (-not (Test-Path $signtool)) {
-            Write-Warning "signtool not found, trying to locate..."
-            $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Select-Object -First 1 -ExpandProperty FullName
+            Write-Warning "Specific signtool not found, trying to locate x64 version..."
+            $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -like "*\x64\*" } | Select-Object -First 1 -ExpandProperty FullName
           }
+
+          if (-not $signtool -or -not (Test-Path $signtool)) {
+            Write-Error "signtool.exe not found"
+            exit 1
+          }
+
+          Write-Host "Using signtool at: $signtool"
 
           $exeFiles = @(
             "Image Printer CLI/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish/*.exe",
@@ -195,6 +216,9 @@ jobs:
             foreach ($exe in $files) {
               Write-Host "Signing $($exe.FullName)..."
               & $signtool sign /sha1 "${{ env.CERT_THUMBPRINT }}" /fd SHA256 /t http://timestamp.digicert.com $exe.FullName
+              if ($LASTEXITCODE -ne 0) {
+                Write-Warning "Failed to sign $($exe.FullName)"
+              }
             }
           }
         shell: pwsh
