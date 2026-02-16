@@ -85,7 +85,7 @@ jobs:
       - name: Create ZIP archive
         run: |
           New-Item -ItemType Directory -Path ./artifacts -Force | Out-Null
-          $publishPath = "Image Printer WinUI/bin/${{ matrix.platform }}/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
+          $publishPath = "Image Printer WinUI/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.platform }}/publish"
           if (-not (Test-Path -Path $publishPath)) { throw "WinUI publish output not found at $publishPath" }
           Compress-Archive -Path "$publishPath/*" -DestinationPath ./artifacts/ImagePrinterWinUI-${{ matrix.platform }}.zip
         shell: pwsh
