@@ -35,7 +35,14 @@ jobs:
         continue-on-error: false
 
       - name: Publish Image Printer GUI
-        run: dotnet publish "Image Printer GUI/Image Printer GUI.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }}
+        run: dotnet publish "Image Printer GUI/Image Printer GUI.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=false -p:PublishReadyToRun=true --output "Image Printer GUI/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish" --verbosity normal
+
+      - name: List publish output
+        run: |
+          Write-Host "Checking for publish output..."
+          Get-ChildItem -Path "Image Printer GUI/bin" -Recurse | Select-Object FullName
+        shell: pwsh
+        continue-on-error: true
 
       - name: Create ZIP archives
         run: |
@@ -80,7 +87,14 @@ jobs:
         continue-on-error: false
 
       - name: Publish Image Printer WinUI
-        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release -p:Platform=${{ matrix.platform }} -p:GenerateAppxPackageOnBuild=true
+        run: dotnet publish "Image Printer WinUI/Image Printer WinUI.csproj" --configuration Release -p:Platform=${{ matrix.platform }} -p:RuntimeIdentifier=${{ matrix.rid }} --self-contained true --output "Image Printer WinUI/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.platform }}/publish" -p:GenerateAppxPackageOnBuild=true
+
+      - name: List publish output
+        run: |
+          Write-Host "Checking for WinUI publish output..."
+          Get-ChildItem -Path "Image Printer WinUI/bin" -Recurse -Depth 5 -ErrorAction SilentlyContinue | Select-Object FullName
+        shell: pwsh
+        continue-on-error: true
 
       - name: Create ZIP archive
         run: |
@@ -150,16 +164,16 @@ jobs:
         continue-on-error: true
 
       - name: Publish Image Printer CLI
-        run: dotnet publish "Image Printer CLI/Image Printer CLI.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }}
+        run: dotnet publish "Image Printer CLI/Image Printer CLI.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true --output "Image Printer CLI/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
 
       - name: Publish Image Resizer
-        run: dotnet publish "Image Resizer/Image Resizer.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }}
+        run: dotnet publish "Image Resizer/Image Resizer.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true --output "Image Resizer/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
 
       - name: Publish Un Text Filer
-        run: dotnet publish "Un Text Filer/Un Text Filer.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }}
+        run: dotnet publish "Un Text Filer/Un Text Filer.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true --output "Un Text Filer/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
 
       - name: Publish Video Printer
-        run: dotnet publish "Video Printer/Video Printer.csproj" --configuration Release -p:PublishProfile=${{ matrix.rid }}
+        run: dotnet publish "Video Printer/Video Printer.csproj" --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true --output "Video Printer/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish"
 
       - name: Sign executables
         run: |

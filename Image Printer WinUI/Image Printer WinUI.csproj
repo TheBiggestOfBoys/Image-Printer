@@ -10,8 +10,7 @@
     <EnableMsixTooling>true</EnableMsixTooling>
     <WindowsPackageType>MSIX</WindowsPackageType>
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
-    <AppxBundle>Always</AppxBundle>
-    <AppxBundlePlatforms>x86|x64|ARM64</AppxBundlePlatforms>
+    <AppxBundle>Never</AppxBundle>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
   </PropertyGroup>
