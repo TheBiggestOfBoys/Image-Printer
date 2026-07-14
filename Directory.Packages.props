@@ -3,16 +3,14 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-
   <ItemGroup>
     <!-- Common packages used across multiple projects -->
-    <PackageVersion Include="System.Drawing.Common" Version="10.0.3" />
-    
+    <PackageVersion Include="System.Drawing.Common" Version="10.0.9" />
+    <PackageVersion Include="QuestPDF" Version="2026.7.1" />
     <!-- WinUI specific packages -->
-    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="1.8.260209005" />
-    <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7705" />
-    
+    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.2.0" />
+    <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2270" />
     <!-- Video Printer specific packages -->
-    <PackageVersion Include="OpenCvSharp4.Windows" Version="4.13.0.20260211" />
+    <PackageVersion Include="OpenCvSharp4.Windows" Version="4.13.0.20260627" />
   </ItemGroup>
 </Project>

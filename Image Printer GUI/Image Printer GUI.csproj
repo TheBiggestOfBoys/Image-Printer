@@ -12,5 +12,6 @@
 	
 	<ItemGroup>
 		<ProjectReference Include="..\Image Printer\Image Printer.csproj" />
+		<ProjectReference Include="..\Image Printer.Video\Image Printer.Video.csproj" />
 	</ItemGroup>
 </Project>

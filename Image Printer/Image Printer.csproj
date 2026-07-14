@@ -6,12 +6,7 @@
 	</PropertyGroup>
 	
 	<ItemGroup>
-		<Compile Remove="Saved ASCII\**" />
-		<EmbeddedResource Remove="Saved ASCII\**" />
-		<None Remove="Saved ASCII\**" />
-	</ItemGroup>
-	
-	<ItemGroup>
 		<PackageReference Include="System.Drawing.Common" />
+		<PackageReference Include="QuestPDF" />
 	</ItemGroup>
 </Project>

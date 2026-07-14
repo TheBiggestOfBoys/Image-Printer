@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using System.Threading.Tasks;
 
 using Image_Printer;
+using Image_Printer.Video;
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -59,13 +61,22 @@ namespace Image_Printer_WinUI
 
 		/// <summary>Filesystem path of the .txt last written by Save as text.</summary>
 		private string lastExportedPath;
+
+		/// <summary>Filesystem path of the PDF last written by Save as PDF.</summary>
+		private string lastExportedPdfPath;
+
+		private StorageFile savedPdfFile;
 		#endregion
 
 		private ImagePrinter imagePrinter = new(ImagePrinter.CreateGradient());
 
+		private FrameScrubSource _frameScrub;
+		private int _currentFrameIndex;
+		private int _frameLoadVersion;
 		private bool _suppressInvertToggle;
 		private bool _suppressAsciiSetChange;
 		private bool _suppressResolutionSync;
+		private bool _suppressFrameScrub;
 
 		public MainWindow()
 		{
@@ -216,35 +227,61 @@ namespace Image_Printer_WinUI
 			IInitializeWithWindow initializeWithWindowWrapper = openPicker.As<IInitializeWithWindow>();
 			initializeWithWindowWrapper.Initialize(hwnd);
 
-			StorageFile file = await openPicker.PickSingleFileAsync();
-			if (file is null)
+			IReadOnlyList<StorageFile> files = await openPicker.PickMultipleFilesAsync();
+			if (files is null || files.Count == 0)
 			{
 				return;
 			}
 
-			openedFile = file;
-			ImagePathText.Text = openedFile.Path;
-
-			ImagePrinter.ASCIISet previousSet = imagePrinter.SelectedASCIISet;
-			List<char> previousChars = imagePrinter.ASCIIGrayscaleChars;
-
-			imagePrinter = new(openedFile.Path);
-			imagePrinter.SetASCIIGrayscaleChars(previousSet);
-			if (previousSet == ImagePrinter.ASCIISet.Custom)
+			List<string> paths = [];
+			foreach (StorageFile file in files)
 			{
-				imagePrinter.ASCIIGrayscaleChars = [.. previousChars];
+				if (!string.IsNullOrWhiteSpace(file.Path) && File.Exists(file.Path))
+				{
+					paths.Add(file.Path);
+				}
 			}
 
-			imagePrinter.UpdateResolution(ResolutionSlider.Value / 100);
+			if (paths.Count == 0)
+			{
+				ShowStatus("Could not access a filesystem path for the selected image(s).", InfoBarSeverity.Error);
+				return;
+			}
 
-			_suppressInvertToggle = true;
-			InvertGrayscaleBox.IsChecked = false;
-			_suppressInvertToggle = false;
+			openedFile = files[0];
 
-			ResetAsciiList();
-			await RefreshPreviewAsync();
-			UpdateActionAvailability();
-			ShowStatus("Image opened. Adjust resolution, then save or copy as text.", InfoBarSeverity.Informational);
+			try
+			{
+				if (paths.Count == 1 && !FrameScrubSource.IsGifPath(paths[0]))
+				{
+					ClearFrameScrub();
+					ImagePathText.Text = paths[0];
+					await LoadSingleImageAsync(paths[0]);
+					ShowStatus("Image opened. Adjust resolution, then save, copy, or export as PDF.", InfoBarSeverity.Informational);
+					return;
+				}
+
+				FrameScrubSource scrub = FrameScrubSource.FromImages(paths);
+				if (scrub.FrameCount <= 1 && scrub.Kind == FrameScrubKind.Images)
+				{
+					ClearFrameScrub();
+					scrub.Dispose();
+					ImagePathText.Text = paths[0];
+					await LoadSingleImageAsync(paths[0]);
+					ShowStatus("Image opened. Adjust resolution, then save, copy, or export as PDF.", InfoBarSeverity.Informational);
+					return;
+				}
+
+				await BeginFrameScrubAsync(scrub, startIndex: 0);
+				string kindLabel = scrub.Kind == FrameScrubKind.Gif ? "GIF frames" : "images";
+				ShowStatus(
+					$"Opened {scrub.FrameCount} {kindLabel}. Scrub to pick a frame, then save/export that one.",
+					InfoBarSeverity.Informational);
+			}
+			catch (Exception ex)
+			{
+				ShowStatus($"Could not open images: {ex.Message}", InfoBarSeverity.Error);
+			}
 		}
 
 		private async void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -275,50 +312,50 @@ namespace Image_Printer_WinUI
 				return;
 			}
 
-			CachedFileManager.DeferUpdates(savedFile);
-			await FileIO.WriteTextAsync(savedFile, imagePrinter.ToString());
-			_ = await CachedFileManager.CompleteUpdatesAsync(savedFile);
+			string tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.txt");
+			try
+			{
+				string text = imagePrinter.ToString();
+				await File.WriteAllTextAsync(tempPath, text);
+				await CommitTempFileToStorageAsync(savedFile, tempPath);
 
-			lastExportedPath = savedFile.Path;
-			ExportPathText.Text = !string.IsNullOrWhiteSpace(lastExportedPath)
-				? lastExportedPath
-				: savedFile.Name;
-			UpdateActionAvailability();
-			ShowStatus("Saved as text.", InfoBarSeverity.Success);
+				lastExportedPath = !string.IsNullOrWhiteSpace(savedFile.Path) ? savedFile.Path : tempPath;
+				ExportPathText.Text = !string.IsNullOrWhiteSpace(savedFile.Path)
+					? savedFile.Path
+					: savedFile.Name;
+				UpdateActionAvailability();
+				ShowStatus("Saved as text.", InfoBarSeverity.Success);
+			}
+			catch (Exception ex)
+			{
+				bool wrote = IsNonEmptyFile(tempPath)
+					|| IsNonEmptyFile(savedFile.Path)
+					|| savedFile is not null;
+				if (wrote)
+				{
+					lastExportedPath = !string.IsNullOrWhiteSpace(savedFile.Path) ? savedFile.Path : tempPath;
+					UpdateActionAvailability();
+					ShowStatus("Saved as text.", InfoBarSeverity.Success);
+				}
+				else
+				{
+					ShowStatus($"Could not save text: {ex.Message}", InfoBarSeverity.Error);
+				}
+			}
+			finally
+			{
+				TryDeleteTempFile(tempPath, lastExportedPath);
+			}
 		}
 
 		private async void OpenTextFile_Click(object sender, RoutedEventArgs e)
 		{
-			try
+			if (await TryOpenExportedFileAsync(savedFile, lastExportedPath))
 			{
-				// Open only the .txt this app just wrote via Save as text (same as WPF GUI).
-				if (savedFile is not null && await Launcher.LaunchFileAsync(savedFile))
-				{
-					return;
-				}
-
-				if (!string.IsNullOrWhiteSpace(lastExportedPath) && File.Exists(lastExportedPath))
-				{
-					StorageFile file = await StorageFile.GetFileFromPathAsync(lastExportedPath);
-					if (await Launcher.LaunchFileAsync(file))
-					{
-						return;
-					}
-
-					_ = Process.Start(new ProcessStartInfo
-					{
-						FileName = lastExportedPath,
-						UseShellExecute = true
-					});
-					return;
-				}
-
-				ShowStatus("Save as text first, then open the exported file.", InfoBarSeverity.Informational);
+				return;
 			}
-			catch (Exception ex)
-			{
-				ShowStatus($"Could not open text file: {ex.Message}", InfoBarSeverity.Error);
-			}
+
+			ShowStatus("Save as text first, then open the exported file.", InfoBarSeverity.Informational);
 		}
 
 		private void CopyText_Click(object sender, RoutedEventArgs e)
@@ -348,6 +385,571 @@ namespace Image_Printer_WinUI
 
 			imagePrinter.ReverseGrayscale();
 			ResetAsciiList();
+		}
+
+		private async void SavePdfButton_Click(object sender, RoutedEventArgs e)
+		{
+			if (imagePrinter is null)
+			{
+				return;
+			}
+
+			ApplyAsciiCharsFromUi();
+			string ascii = imagePrinter.ToString();
+
+			FileSavePicker pdfPicker = new()
+			{
+				SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+				SuggestedFileName = Path.ChangeExtension(imagePrinter.FileName, ".pdf"),
+				DefaultFileExtension = ".pdf"
+			};
+			pdfPicker.FileTypeChoices.Add("PDF", [".pdf"]);
+
+			IWindowNative window = this.As<IWindowNative>();
+			pdfPicker.As<IInitializeWithWindow>().Initialize(window.WindowHandle);
+
+			StorageFile pdfFile = await pdfPicker.PickSaveFileAsync();
+			if (pdfFile is null)
+			{
+				return;
+			}
+
+			string tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.pdf");
+			AsciiPdfExportResult result = null;
+			try
+			{
+				// Always write via temp so QuestPDF never fights the picker file lock.
+				result = await Task.Run(() => AsciiPdfExporter.Save(ascii, tempPath));
+				await CommitTempFileToStorageAsync(pdfFile, tempPath);
+
+				savedPdfFile = pdfFile;
+				lastExportedPdfPath = !string.IsNullOrWhiteSpace(pdfFile.Path) ? pdfFile.Path : tempPath;
+				ExportPathText.Text = !string.IsNullOrWhiteSpace(pdfFile.Path) ? pdfFile.Path : pdfFile.Name;
+				UpdateActionAvailability();
+
+				string orientation = result.IsLandscape ? "landscape" : "portrait";
+				ShowStatus(
+					$"PDF saved ({orientation}, {result.FontSizePt:0.##}pt, {result.ScalePercent:0.#}% of 12pt).",
+					InfoBarSeverity.Success);
+			}
+			catch (Exception ex)
+			{
+				bool exported = IsNonEmptyFile(tempPath) || IsNonEmptyFile(pdfFile.Path);
+				if (exported)
+				{
+					savedPdfFile = pdfFile;
+					lastExportedPdfPath = !string.IsNullOrWhiteSpace(pdfFile.Path) ? pdfFile.Path : tempPath;
+					try { UpdateActionAvailability(); } catch { /* ignore */ }
+
+					if (result is not null)
+					{
+						string orientation = result.IsLandscape ? "landscape" : "portrait";
+						ShowStatus(
+							$"PDF saved ({orientation}, {result.FontSizePt:0.##}pt, {result.ScalePercent:0.#}% of 12pt).",
+							InfoBarSeverity.Success);
+					}
+					else
+					{
+						ShowStatus("PDF saved.", InfoBarSeverity.Success);
+					}
+				}
+				else
+				{
+					ShowStatus($"PDF export failed: {ex.Message}", InfoBarSeverity.Error);
+				}
+			}
+			finally
+			{
+				TryDeleteTempFile(tempPath, lastExportedPdfPath);
+			}
+		}
+
+		private async void OpenPdfButton_Click(object sender, RoutedEventArgs e)
+		{
+			if (await TryOpenExportedFileAsync(savedPdfFile, lastExportedPdfPath))
+			{
+				return;
+			}
+
+			ShowStatus("Save as PDF first, then open the exported file.", InfoBarSeverity.Informational);
+		}
+
+		private async void TextToImageButton_Click(object sender, RoutedEventArgs e)
+		{
+			FileOpenPicker textPicker = new()
+			{
+				SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+				FileTypeFilter = { ".txt" }
+			};
+			IWindowNative window = this.As<IWindowNative>();
+			textPicker.As<IInitializeWithWindow>().Initialize(window.WindowHandle);
+
+			StorageFile textFile = await textPicker.PickSingleFileAsync();
+			if (textFile is null)
+			{
+				return;
+			}
+
+			try
+			{
+				string content = await FileIO.ReadTextAsync(textFile);
+				AsciiDocument document = AsciiDocument.FromText(content);
+				Bitmap rebuilt = await Task.Run(() => AsciiImageRebuilder.ToBitmap(document, imagePrinter.Palette));
+
+				FileSavePicker imageSave = new()
+				{
+					SuggestedStartLocation = PickerLocationId.PicturesLibrary,
+					SuggestedFileName = Path.GetFileNameWithoutExtension(textFile.Name) + ".bmp",
+					DefaultFileExtension = ".bmp"
+				};
+				imageSave.FileTypeChoices.Add("BMP", [".bmp"]);
+				imageSave.FileTypeChoices.Add("PNG", [".png"]);
+				imageSave.As<IInitializeWithWindow>().Initialize(window.WindowHandle);
+
+				StorageFile outFile = await imageSave.PickSaveFileAsync();
+				if (outFile is null)
+				{
+					rebuilt.Dispose();
+					return;
+				}
+
+				string tempImage = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}{outFile.FileType}");
+				await Task.Run(() => AsciiImageRebuilder.SaveBitmap(rebuilt, tempImage));
+				CachedFileManager.DeferUpdates(outFile);
+				await FileIO.WriteBytesAsync(outFile, await File.ReadAllBytesAsync(tempImage));
+				_ = await CachedFileManager.CompleteUpdatesAsync(outFile);
+
+				imagePrinter = new ImagePrinter((Bitmap)rebuilt.Clone(), Path.GetFileNameWithoutExtension(textFile.Name));
+				rebuilt.Dispose();
+				imagePrinter.UpdateResolution(1);
+				ImagePathText.Text = !string.IsNullOrWhiteSpace(outFile.Path) ? outFile.Path : outFile.Name;
+				ExportPathText.Text = ImagePathText.Text;
+				await RefreshPreviewAsync();
+				UpdateActionAvailability();
+				ShowStatus("Text rebuilt to image.", InfoBarSeverity.Success);
+
+				if (File.Exists(tempImage))
+				{
+					File.Delete(tempImage);
+				}
+			}
+			catch (Exception ex)
+			{
+				ShowStatus($"Text to image failed: {ex.Message}", InfoBarSeverity.Error);
+			}
+		}
+
+		private async void OpenVideoButton_Click(object sender, RoutedEventArgs e)
+		{
+			FileOpenPicker videoPicker = new()
+			{
+				SuggestedStartLocation = PickerLocationId.VideosLibrary,
+				FileTypeFilter = { ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".webm", ".gif" }
+			};
+			IWindowNative window = this.As<IWindowNative>();
+			videoPicker.As<IInitializeWithWindow>().Initialize(window.WindowHandle);
+
+			StorageFile videoFile = await videoPicker.PickSingleFileAsync();
+			if (videoFile is null || string.IsNullOrWhiteSpace(videoFile.Path))
+			{
+				if (videoFile is not null)
+				{
+					ShowStatus("Could not access a filesystem path for that video.", InfoBarSeverity.Error);
+				}
+
+				return;
+			}
+
+			try
+			{
+				await BeginFrameScrubAsync(FrameScrubSource.FromVideo(videoFile.Path), startIndex: 0);
+				ShowStatus(
+					"Video opened. Scrub to a frame, then save/export that one — or use Export all frames.",
+					InfoBarSeverity.Informational);
+			}
+			catch (Exception ex)
+			{
+				ShowStatus($"Could not open video: {ex.Message}", InfoBarSeverity.Error);
+			}
+		}
+
+		private async void ExportAllFramesButton_Click(object sender, RoutedEventArgs e)
+		{
+			if (_frameScrub is null || !_frameScrub.SupportsExportAll
+				|| string.IsNullOrWhiteSpace(_frameScrub.SourcePath))
+			{
+				ShowStatus("Open a video or GIF first to export all frames.", InfoBarSeverity.Informational);
+				return;
+			}
+
+			FolderPicker folderPicker = new()
+			{
+				SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+			};
+			folderPicker.FileTypeFilter.Add("*");
+			IWindowNative window = this.As<IWindowNative>();
+			folderPicker.As<IInitializeWithWindow>().Initialize(window.WindowHandle);
+			StorageFolder folder = await folderPicker.PickSingleFolderAsync();
+			if (folder is null || string.IsNullOrWhiteSpace(folder.Path))
+			{
+				ShowStatus("Choose a parent folder. A folder named after the source will be created inside it.", InfoBarSeverity.Informational);
+				return;
+			}
+
+			ApplyAsciiCharsFromUi();
+			double resolution = ResolutionSlider.Value / 100;
+			bool invert = InvertGrayscaleBox.IsChecked == true;
+			ImagePrinter.ASCIISet set = imagePrinter.SelectedASCIISet;
+			List<char> customChars = [.. imagePrinter.ASCIIGrayscaleChars];
+			string sourcePath = _frameScrub.SourcePath;
+			FrameScrubKind kind = _frameScrub.Kind;
+			string parentDir = folder.Path;
+
+			SetVideoExportProgress(0, "Preparing frame export…", visible: true);
+			ShowStatus("Extracting and converting frames…", InfoBarSeverity.Informational);
+			ExportAllFramesButton.IsEnabled = false;
+			OpenVideoButton.IsEnabled = false;
+			string exportRoot = null;
+			try
+			{
+				Microsoft.UI.Dispatching.DispatcherQueue dispatcher = DispatcherQueue;
+
+				await Task.Run(() =>
+				{
+					(string Root, string ImageFramesDir, string TextFramesDir) = VideoAsciiExportPaths.CreateLayout(parentDir, sourcePath);
+					exportRoot = Root;
+
+					List<string> pngs;
+					if (kind == FrameScrubKind.Gif)
+					{
+						using FrameScrubSource gifSource = FrameScrubSource.FromGif(sourcePath);
+						pngs = ExtractScrubPngs(gifSource, ImageFramesDir, (done, total) =>
+						{
+							double pct = total > 0 ? done * 50.0 / total : 0;
+							ReportVideoExportProgress(dispatcher, pct, $"Extracting GIF frames… {done}/{total}");
+						});
+					}
+					else
+					{
+						using VideoFrameSource source = new(sourcePath);
+						int frameHint = source.FrameCount > 0 ? source.FrameCount : 0;
+						pngs = [.. source.ExtractPngFrames(ImageFramesDir, (done, total) =>
+						{
+							double pct = total > 0 ? done * 50.0 / total : 0;
+							ReportVideoExportProgress(dispatcher, pct, $"Extracting image frames… {done}/{total}");
+						})];
+						if (pngs.Count == 0 && frameHint > 0)
+						{
+							pngs = [];
+						}
+					}
+
+					FrameSequenceConverter converter = new()
+					{
+						Resolution = resolution,
+						Invert = invert,
+						AsciiSet = set,
+						CustomCharacters = set == ImagePrinter.ASCIISet.Custom ? customChars : null
+					};
+
+					int textTotal = Math.Max(1, pngs.Count);
+					converter.WriteAll(
+						EnumerateBitmaps(pngs),
+						TextFramesDir,
+						progress: (done, total) =>
+						{
+							double pct = 50 + (total > 0 ? done * 50.0 / total : 0);
+							ReportVideoExportProgress(dispatcher, pct, $"Converting text frames… {done}/{total}");
+						},
+						knownTotal: textTotal);
+				});
+
+				ExportPathText.Text = exportRoot;
+				SetVideoExportProgress(100, "Frame export complete.", visible: true);
+				ShowStatus($"Frames exported to {exportRoot}", InfoBarSeverity.Success);
+			}
+			catch (Exception ex)
+			{
+				if (DirectoryHasFiles(exportRoot))
+				{
+					ShowStatus($"Frames exported to {exportRoot}", InfoBarSeverity.Success);
+				}
+				else
+				{
+					ShowStatus($"Frame export failed: {ex.Message}", InfoBarSeverity.Error);
+				}
+			}
+			finally
+			{
+				OpenVideoButton.IsEnabled = true;
+				UpdateActionAvailability();
+				SetVideoExportProgress(0, null, visible: false);
+			}
+		}
+
+		private async void FrameScrubSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+		{
+			if (_suppressFrameScrub || _frameScrub is null)
+			{
+				return;
+			}
+
+			int index = (int)Math.Round(e.NewValue);
+			await LoadScrubFrameAsync(index);
+		}
+
+		private async void PrevFrameButton_Click(object sender, RoutedEventArgs e)
+		{
+			if (_frameScrub is null)
+			{
+				return;
+			}
+
+			await LoadScrubFrameAsync(_currentFrameIndex - 1);
+		}
+
+		private async void NextFrameButton_Click(object sender, RoutedEventArgs e)
+		{
+			if (_frameScrub is null)
+			{
+				return;
+			}
+
+			await LoadScrubFrameAsync(_currentFrameIndex + 1);
+		}
+
+		private async Task BeginFrameScrubAsync(FrameScrubSource source, int startIndex)
+		{
+			ClearFrameScrub();
+			_frameScrub = source;
+			_suppressFrameScrub = true;
+			FrameScrubSlider.Minimum = 0;
+			FrameScrubSlider.Maximum = Math.Max(0, source.FrameCount - 1);
+			FrameScrubSlider.Value = Math.Clamp(startIndex, 0, source.FrameCount - 1);
+			_suppressFrameScrub = false;
+			FrameScrubberPanel.Visibility = Visibility.Visible;
+			ImagePathText.Text = source.SourcePath;
+			await LoadScrubFrameAsync((int)FrameScrubSlider.Value);
+			UpdateActionAvailability();
+		}
+
+		private void ClearFrameScrub()
+		{
+			_frameScrub?.Dispose();
+			_frameScrub = null;
+			_currentFrameIndex = 0;
+			FrameScrubberPanel.Visibility = Visibility.Collapsed;
+		}
+
+		private async Task LoadSingleImageAsync(string path)
+		{
+			ImagePrinter.ASCIISet previousSet = imagePrinter.SelectedASCIISet;
+			List<char> previousChars = imagePrinter.ASCIIGrayscaleChars;
+
+			imagePrinter = new(path);
+			imagePrinter.SetASCIIGrayscaleChars(previousSet);
+			if (previousSet == ImagePrinter.ASCIISet.Custom)
+			{
+				imagePrinter.ASCIIGrayscaleChars = [.. previousChars];
+			}
+
+			imagePrinter.UpdateResolution(ResolutionSlider.Value / 100);
+
+			_suppressInvertToggle = true;
+			InvertGrayscaleBox.IsChecked = false;
+			_suppressInvertToggle = false;
+
+			ResetAsciiList();
+			await RefreshPreviewAsync();
+			UpdateActionAvailability();
+		}
+
+		private async Task LoadScrubFrameAsync(int index)
+		{
+			if (_frameScrub is null)
+			{
+				return;
+			}
+
+			index = Math.Clamp(index, 0, _frameScrub.FrameCount - 1);
+			int version = ++_frameLoadVersion;
+
+			ApplyAsciiCharsFromUi();
+			ImagePrinter.ASCIISet set = imagePrinter.SelectedASCIISet;
+			List<char> customChars = [.. imagePrinter.ASCIIGrayscaleChars];
+			double resolution = ResolutionSlider.Value / 100;
+			bool invert = InvertGrayscaleBox.IsChecked == true;
+			FrameScrubSource source = _frameScrub;
+			string displayName = source.GetFrameDisplayName(index);
+
+			Bitmap frame = await Task.Run(() => source.GetFrame(index));
+			if (version != _frameLoadVersion || _frameScrub != source)
+			{
+				frame.Dispose();
+				return;
+			}
+
+			imagePrinter = new ImagePrinter(frame, displayName);
+			imagePrinter.SetASCIIGrayscaleChars(set);
+			if (set == ImagePrinter.ASCIISet.Custom)
+			{
+				imagePrinter.ASCIIGrayscaleChars = customChars;
+			}
+
+			imagePrinter.UpdateResolution(resolution);
+			if (invert)
+			{
+				imagePrinter.ReverseGrayscale();
+			}
+
+			_currentFrameIndex = index;
+			_suppressFrameScrub = true;
+			FrameScrubSlider.Value = index;
+			_suppressFrameScrub = false;
+			FrameScrubLabel.Text = $"Frame {index + 1} / {_frameScrub.FrameCount}";
+
+			ResetAsciiList();
+			await RefreshPreviewAsync();
+			UpdateActionAvailability();
+		}
+
+		private void ReportVideoExportProgress(Microsoft.UI.Dispatching.DispatcherQueue dispatcher, double percent, string message)
+		{
+			_ = dispatcher.TryEnqueue(() => SetVideoExportProgress(percent, message, visible: true));
+		}
+
+		private void SetVideoExportProgress(double percent, string message, bool visible)
+		{
+			VideoExportProgressBar.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+			VideoExportProgressText.Visibility = visible && !string.IsNullOrWhiteSpace(message)
+				? Visibility.Visible
+				: Visibility.Collapsed;
+			VideoExportProgressBar.Value = Math.Clamp(percent, 0, 100);
+			if (!string.IsNullOrWhiteSpace(message))
+			{
+				VideoExportProgressText.Text = message;
+			}
+		}
+
+		private static IEnumerable<Bitmap> EnumerateBitmaps(IEnumerable<string> paths)
+		{
+			foreach (string path in paths)
+			{
+				using Bitmap bmp = new(path);
+				yield return (Bitmap)bmp.Clone();
+			}
+		}
+
+		private static List<string> ExtractScrubPngs(FrameScrubSource source, string outputDirectory, Action<int, int> progress)
+		{
+			_ = Directory.CreateDirectory(outputDirectory);
+			List<string> paths = [];
+			for (int i = 0; i < source.FrameCount; i++)
+			{
+				using Bitmap frame = source.GetFrame(i);
+				string path = Path.Combine(outputDirectory, $"frame{i}.png");
+				frame.Save(path, DrawingImageFormat.Png);
+				paths.Add(path);
+				progress?.Invoke(i + 1, source.FrameCount);
+			}
+			return paths;
+		}
+
+		/// <summary>
+		/// Writes a completed temp file into a picker <see cref="StorageFile"/> without treating
+		/// CachedFileManager incomplete/failed follow-up status as an export failure.
+		/// </summary>
+		private static async Task CommitTempFileToStorageAsync(StorageFile file, string tempPath)
+		{
+			ArgumentNullException.ThrowIfNull(file);
+			if (!File.Exists(tempPath))
+			{
+				throw new FileNotFoundException("Temporary export file was not created.", tempPath);
+			}
+
+			if (!string.IsNullOrWhiteSpace(file.Path))
+			{
+				try
+				{
+					File.Copy(tempPath, file.Path, overwrite: true);
+					return;
+				}
+				catch
+				{
+					// Fall through to StorageFile APIs when the path is locked by the picker.
+				}
+			}
+
+			byte[] bytes = await File.ReadAllBytesAsync(tempPath);
+			try { CachedFileManager.DeferUpdates(file); }
+			catch { /* optional */ }
+
+			await FileIO.WriteBytesAsync(file, bytes);
+
+			try { _ = await CachedFileManager.CompleteUpdatesAsync(file); }
+			catch { /* file bytes are already written */ }
+		}
+
+		private static async Task<bool> TryOpenExportedFileAsync(StorageFile storageFile, string path)
+		{
+			if (storageFile is not null)
+			{
+				try
+				{
+					if (await Launcher.LaunchFileAsync(storageFile))
+					{
+						return true;
+					}
+				}
+				catch { /* try path next */ }
+			}
+
+			if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+			{
+				try
+				{
+					_ = Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+					return true;
+				}
+				catch { /* try LaunchFileAsync next */ }
+
+				try
+				{
+					StorageFile file = await StorageFile.GetFileFromPathAsync(path);
+					if (await Launcher.LaunchFileAsync(file))
+					{
+						return true;
+					}
+				}
+				catch { /* give up */ }
+			}
+
+			return false;
+		}
+
+		private static bool IsNonEmptyFile(string path)
+		{
+			return !string.IsNullOrWhiteSpace(path) && File.Exists(path) && new FileInfo(path).Length > 0;
+		}
+
+		private static bool DirectoryHasFiles(string directory)
+		{
+			return !string.IsNullOrWhiteSpace(directory)
+			&& Directory.Exists(directory)
+			&& Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories).Any();
+		}
+
+		private static void TryDeleteTempFile(string tempPath, string keepPath)
+		{
+			try
+			{
+				if (File.Exists(tempPath)
+					&& !string.Equals(tempPath, keepPath, StringComparison.OrdinalIgnoreCase))
+				{
+					File.Delete(tempPath);
+				}
+			}
+			catch { /* ignore cleanup failures */ }
 		}
 		#endregion
 
@@ -439,10 +1041,16 @@ namespace Image_Printer_WinUI
 			bool hasExportedFile = savedFile is not null
 				|| (!string.IsNullOrWhiteSpace(lastExportedPath) && File.Exists(lastExportedPath));
 
+			bool hasExportedPdf = savedPdfFile is not null
+				|| (!string.IsNullOrWhiteSpace(lastExportedPdfPath) && File.Exists(lastExportedPdfPath));
+
 			SaveButton.IsEnabled = hasPrinter;
 			CopyText.IsEnabled = hasPrinter;
+			SavePdfButton.IsEnabled = hasPrinter;
 			InvertGrayscaleBox.IsEnabled = hasPrinter;
 			OpenTextFile.IsEnabled = hasExportedFile;
+			OpenPdfButton.IsEnabled = hasExportedPdf;
+			ExportAllFramesButton.IsEnabled = _frameScrub is not null && _frameScrub.SupportsExportAll;
 		}
 
 		private void ShowStatus(string message, InfoBarSeverity severity)

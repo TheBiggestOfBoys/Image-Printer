@@ -1,10 +1,14 @@
 # Image Printer
 
-Converts images to ASCII text. Shared product name and actions across every app: **Open image**, **Save as text**, **Open text file**, **Copy text**, **Resolution** (1–100%), and **Invert grayscale**.
+Converts images to ASCII text. Shared product name and actions across apps: **Open image**, **Save as text**, **Open text file**, **Copy text**, **Save as PDF**, **Text to image**, **Open video**, **Resolution** (1–100%), and **Invert grayscale**.
 
 ## Image Printer (library)
 
-Core conversion library used by the other apps.
+Core conversion library: palettes, documents, image rebuild (UnText), frame batch conversion, and single-page PDF export.
+
+## Image Printer.Video
+
+OpenCV-backed video frame extraction used by WinUI, WPF GUI, and the Video Printer CLI.
 
 ## Image Printer CLI
 
@@ -12,20 +16,20 @@ Console converter: open an image path, set resolution and invert grayscale, choo
 
 ## Image Printer GUI
 
-WPF desktop UI with open/save/copy, resolution, invert grayscale, and an ASCII character-set editor.
+WPF desktop UI with full feature set: text/PDF export, text-to-image, video frames, ASCII editor.
 
 ## Image Printer WinUI
 
-Windows App SDK / WinUI 3 app intended for the Microsoft Store. Same features as the WPF GUI: open image, preview, image/export paths, resolution, invert grayscale, ASCII character editor and set picker, save as text, copy text, and open the saved text file.
+Windows App SDK / WinUI 3 Store app with the same feature set as the WPF GUI.
+
+## UnText Filer
+
+CLI fallback: rebuild a grayscale image from an ASCII `.txt` file (uses the shared library).
+
+## Video Printer
+
+CLI fallback: extract video frames and convert them to ASCII (uses Image Printer.Video).
 
 ## Image Resizer
 
 Uses `ImagePrinter` to resize images.
-
-## UnText Filer
-
-Converts ASCII text back to a grayscale image (assumes the default ASCII set).
-
-## Video Printer
-
-Prints video frames over time.

@@ -7,15 +7,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="OpenCvSharp4.Windows" />
 		<PackageReference Include="System.Drawing.Common" />
 	</ItemGroup>
-	
-	<ItemGroup>
-		<Folder Include="Frames\" />
-	</ItemGroup>
-	
+
 	<ItemGroup>
 		<ProjectReference Include="..\Image Printer\Image Printer.csproj" />
+		<ProjectReference Include="..\Image Printer.Video\Image Printer.Video.csproj" />
 	</ItemGroup>
 </Project>

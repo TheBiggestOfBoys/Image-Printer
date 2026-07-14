@@ -9,5 +9,9 @@
     <!-- Language settings - most projects use disable, can be overridden per project -->
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
+
+    <!-- Project folders use spaces; NuGet PackageId cannot. "Image Printer" → "Image.Printer". -->
+    <PackageId>$([System.String]::Copy('$(MSBuildProjectName)').Replace(' ', '.'))</PackageId>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 </Project>

@@ -7,52 +7,325 @@
 		mc:Ignorable="d"
 		d:DataContext="{d:DesignInstance Type=local:MainWindow, IsDesignTimeCreatable=True}"
 		ResizeMode="CanResize"
-		MinWidth="640"
-		MinHeight="400"
+		MinWidth="720"
+		MinHeight="480"
 		Title="Image Printer"
-		Height="450"
-		Width="800">
-	<Grid>
+		Height="520"
+		Width="900">
+	<Grid Margin="12">
 		<Grid.RowDefinitions>
-			<RowDefinition Height="1*"/>
-			<RowDefinition Height="1*"/>
-			<RowDefinition Height="4*"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
+			<RowDefinition Height="Auto"/>
 		</Grid.RowDefinitions>
-		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="1*"/>
-			<ColumnDefinition Width="1*"/>
-		</Grid.ColumnDefinitions>
-		<Button x:Name="OpenButton" HorizontalAlignment="Left" VerticalAlignment="Top" Click="OpenButton_Click" Height="50" Width="50" Grid.Column="0" FontFamily="Segoe Fluent Icons" Content="&#xE8B9;" FontSize="36" Margin="120,10,0,0"/>
-		<Button x:Name="SaveButton" HorizontalAlignment="Left" Margin="136,0,0,0" VerticalAlignment="Center" Click="SaveButton_Click" Grid.Column="1" FontFamily="Segoe Fluent Icons" Content="&#xE74E;" Grid.Row="0" Height="50" Width="50" FontSize="36"/>
-		<Rectangle HorizontalAlignment="Left" Height="200" Margin="20,50,0,0" Grid.Row="2" Grid.Column="0" Stroke="Black" VerticalAlignment="Top" Width="310" StrokeThickness="5" Panel.ZIndex="1"/>
-		<Image x:Name="ImagePreview" HorizontalAlignment="Left" Height="200" Margin="20,50,0,0" VerticalAlignment="Top" Width="350" Grid.Column="0" Grid.Row="2"/>
-		<CheckBox x:Name="ReverseGrayscale" Content="Invert grayscale" HorizontalAlignment="Center" Height="25" VerticalAlignment="Top" Width="170" Checked="UpdateGrayscale" Unchecked="UpdateGrayscale" Grid.Row="2" FontSize="16" FontWeight="Bold" Margin="0,10,0,0"/>
-		<Label Content="Image Path:" HorizontalAlignment="Left" Height="30" Margin="10,0,0,0" VerticalAlignment="Center" Width="80" FontWeight="Bold" Grid.Column="0" Grid.Row="1"/>
-		<TextBlock x:Name="ImagePath" HorizontalAlignment="Left" Height="53" Margin="95,0,0,0" TextWrapping="Wrap" VerticalAlignment="Center" Width="295" Grid.Row="1" Grid.Column="0" FontSize="10" FontFamily="Lucida Console"/>
-		<Label Content="Exported to:" HorizontalAlignment="Left" Height="30" Margin="10,0,0,0" VerticalAlignment="Center" Width="80" FontWeight="Bold" Grid.Column="1" Grid.Row="1"/>
-		<TextBlock x:Name="ExportPath" HorizontalAlignment="Left" Height="53" Margin="95,0,0,0" TextWrapping="Wrap" VerticalAlignment="Center" Width="295" Grid.Column="1" Grid.Row="1" FontFamily="Lucida Console" FontSize="10"/>
-		<Label Content="Open image" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Center" Height="35" Width="105" FontWeight="Bold" FontSize="16" Grid.Column="0"/>
-		<Label Grid.Column="1" Content="Save as text" HorizontalAlignment="Left" Margin="36,21,0,0" VerticalAlignment="Top" Height="35" Width="95" FontWeight="Bold" FontSize="14"/>
-		<Slider x:Name="ResolutionValue" HorizontalAlignment="Left" Height="30" Margin="195,0,0,0" VerticalAlignment="Center" Width="185" Maximum="1" TickFrequency="0.05" Value="100" ValueChanged="ResolutionValue_ValueChanged" LargeChange="0" IsSnapToTickEnabled="True" TickPlacement="BottomRight" SmallChange="0.01"/>
-		<Label Content="Resolution" HorizontalAlignment="Left" Margin="222,2,0,0" VerticalAlignment="Top" Height="23"/>
-		<Label Content="0%" HorizontalAlignment="Center" Margin="0,1,0,0" VerticalAlignment="Top" Width="30"/>
-		<Label Content="100%" HorizontalAlignment="Left" Margin="355,1,0,0" VerticalAlignment="Top"/>
-		<TextBlock HorizontalAlignment="Left" Height="14" Margin="320,7,0,0" TextWrapping="Wrap" Text="%" VerticalAlignment="Top" Width="10"/>
-		<Label Grid.Column="1" Content="Open text file" HorizontalAlignment="Left" Height="30" Margin="221,0,0,0" VerticalAlignment="Center" Width="104" FontWeight="Bold" FontSize="14"/>
-		<Button x:Name="OpenTextFile" Grid.Column="1" FontFamily="Segoe Fluent Icons" Content="&#xE8E5;"  HorizontalAlignment="Left" Height="50" Margin="330,10,0,0" VerticalAlignment="Top" Width="50" Click="OpenTextFile_Click" FontSize="36"/>
-		<Button x:Name="CopyText" Grid.Column="1" FontFamily="Segoe Fluent Icons" Content="&#xE8C8;" HorizontalAlignment="Left" Height="50" Margin="340,144,0,0" Grid.Row="2" VerticalAlignment="Top" Width="50" Click="CopyText_Click" FontSize="36"/>
 
-		<ListBox x:Name="ASCIIcharsBox" Grid.Column="1" HorizontalAlignment="Left" Height="189" Margin="25,0,0,0" Grid.Row="2" VerticalAlignment="Center" Width="63">
-			<TextBox Text="#" Width="25" FontSize="20" MaxLength="1"/>
-		</ListBox>
-		<Label Grid.Column="1" Content="ASCII Characters:" HorizontalAlignment="Left" Margin="10,19,0,0" Grid.Row="2" VerticalAlignment="Top" FontWeight="Bold"/>
-		<Button x:Name="DefaultASCII" Grid.Column="1" Content="&#xE72C;" HorizontalAlignment="Left" Height="27" Margin="121,19,0,0" Grid.Row="2" VerticalAlignment="Top" Width="29" FontFamily="Segoe MDL2 Assets" FontSize="14" Click="DefaultASCII_Click"/>
-		<Button x:Name="SubtractCharacter" Grid.Column="1" Content="-" HorizontalAlignment="Left" Height="21" Margin="20,246,0,0" Grid.Row="2" VerticalAlignment="Top" Width="20" Click="SubtractCharacter_Click" FontSize="14"/>
-		<Button x:Name="AddCharacter" Grid.Column="1" Content="+" HorizontalAlignment="Left" Height="21" Margin="72,246,0,0" Grid.Row="2" VerticalAlignment="Top" Width="20" Click="AddCharacter_Click" FontSize="14"/>
-		<Menu x:Name="ASCIISetPicker" Grid.Column="1" HorizontalAlignment="Left" Height="164" Margin="125,75,0,0" Grid.Row="2" VerticalAlignment="Top" Width="100" FontSize="14">
-			<MenuItem Header="Default" Click="MenuItem_Click"/>
-		</Menu>
-		<Button x:Name="SyncButton" Grid.Column="1" Content="&#xE895;" HorizontalAlignment="Left" Height="21" Margin="45,246,0,0" Grid.Row="2" VerticalAlignment="Top" Width="22" FontFamily="Segoe MDL2 Assets" FontSize="14" Click="SyncButton_Click"/>
-		<TextBox x:Name="PercentageBox" HorizontalAlignment="Left" Height="19" Margin="290,6,0,0" TextWrapping="Wrap" Text="100" VerticalAlignment="Top" Width="27" TextChanged="PercentageBox_LostFocus"/>
+		<!-- Toolbar -->
+		<Grid Grid.Row="0" Margin="0,0,0,8">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="Auto"/>
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="Auto"/>
+			</Grid.ColumnDefinitions>
+
+			<StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+				<Label Content="Open image" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+				<Button x:Name="OpenButton"
+						Click="OpenButton_Click"
+						Height="44" Width="44"
+						FontFamily="Segoe Fluent Icons"
+						Content="&#xE8B9;"
+						FontSize="28"
+						ToolTip="Open image(s)"/>
+			</StackPanel>
+
+			<StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
+				<Label Content="Resolution" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+				<TextBlock Text="0%" VerticalAlignment="Center" Margin="0,0,4,0"/>
+				<Slider x:Name="ResolutionValue"
+						Width="180"
+						Minimum="0.01"
+						Maximum="1"
+						Value="1"
+						TickFrequency="0.05"
+						IsSnapToTickEnabled="True"
+						TickPlacement="BottomRight"
+						SmallChange="0.01"
+						LargeChange="0.05"
+						VerticalAlignment="Center"
+						ValueChanged="ResolutionValue_ValueChanged"/>
+				<TextBlock Text="100%" VerticalAlignment="Center" Margin="4,0,8,0"/>
+				<TextBox x:Name="PercentageBox"
+						 Width="40"
+						 Height="22"
+						 Text="100"
+						 VerticalAlignment="Center"
+						 LostFocus="PercentageBox_LostFocus"/>
+				<TextBlock Text="%" VerticalAlignment="Center" Margin="2,0,0,0"/>
+			</StackPanel>
+
+			<StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+				<Label Content="Save as text" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+				<Button x:Name="SaveButton"
+						Click="SaveButton_Click"
+						Height="44" Width="44"
+						FontFamily="Segoe Fluent Icons"
+						Content="&#xE74E;"
+						FontSize="28"
+						ToolTip="Save as text"
+						Margin="0,0,16,0"/>
+				<Label Content="Open text file" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+				<Button x:Name="OpenTextFile"
+						Click="OpenTextFile_Click"
+						Height="44" Width="44"
+						FontFamily="Segoe Fluent Icons"
+						Content="&#xE8E5;"
+						FontSize="28"
+						ToolTip="Open text file"/>
+			</StackPanel>
+		</Grid>
+
+		<!-- Paths -->
+		<Grid Grid.Row="1" Margin="0,0,0,8">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="*"/>
+			</Grid.ColumnDefinitions>
+			<DockPanel Grid.Column="0" Margin="0,0,8,0">
+				<Label Content="Image Path:" FontWeight="Bold" DockPanel.Dock="Left" VerticalAlignment="Top"/>
+				<TextBlock x:Name="ImagePath"
+						   TextWrapping="Wrap"
+						   FontSize="10"
+						   FontFamily="Lucida Console"
+						   VerticalAlignment="Top"
+						   Margin="4,6,0,0"/>
+			</DockPanel>
+			<DockPanel Grid.Column="1" Margin="8,0,0,0">
+				<Label Content="Exported to:" FontWeight="Bold" DockPanel.Dock="Left" VerticalAlignment="Top"/>
+				<TextBlock x:Name="ExportPath"
+						   TextWrapping="Wrap"
+						   FontSize="10"
+						   FontFamily="Lucida Console"
+						   VerticalAlignment="Top"
+						   Margin="4,6,0,0"/>
+			</DockPanel>
+		</Grid>
+
+		<!-- Content: preview | actions | ASCII -->
+		<Grid Grid.Row="2">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="2*"/>
+				<ColumnDefinition Width="Auto"/>
+				<ColumnDefinition Width="*"/>
+			</Grid.ColumnDefinitions>
+
+			<!-- Preview + scrubber -->
+			<Grid Grid.Column="0" Margin="0,0,12,0">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="*"/>
+					<RowDefinition Height="Auto"/>
+				</Grid.RowDefinitions>
+
+				<Border Grid.Row="0"
+						BorderBrush="Black"
+						BorderThickness="3"
+						Background="#FFF8F8F8"
+						Padding="4">
+					<Image x:Name="ImagePreview"
+						   Stretch="Uniform"
+						   HorizontalAlignment="Stretch"
+						   VerticalAlignment="Stretch"/>
+				</Border>
+
+				<StackPanel x:Name="FrameScrubberPanel"
+							Grid.Row="1"
+							Orientation="Horizontal"
+							Margin="0,8,0,0"
+							Visibility="Collapsed">
+					<Button x:Name="PrevFrameButton"
+							Content="&#xE76B;"
+							FontFamily="Segoe Fluent Icons"
+							Width="28" Height="28"
+							Click="PrevFrameButton_Click"
+							ToolTip="Previous frame"/>
+					<Slider x:Name="FrameScrubSlider"
+							Width="200"
+							Minimum="0"
+							Maximum="0"
+							TickFrequency="1"
+							IsSnapToTickEnabled="True"
+							VerticalAlignment="Center"
+							Margin="8,0"
+							ValueChanged="FrameScrubSlider_ValueChanged"/>
+					<Button x:Name="NextFrameButton"
+							Content="&#xE76C;"
+							FontFamily="Segoe Fluent Icons"
+							Width="28" Height="28"
+							Click="NextFrameButton_Click"
+							ToolTip="Next frame"/>
+					<TextBlock x:Name="FrameScrubLabel"
+							   Text="Frame 1 / 1"
+							   VerticalAlignment="Center"
+							   Margin="8,0,0,0"
+							   FontSize="11"/>
+				</StackPanel>
+			</Grid>
+
+			<!-- Actions -->
+			<StackPanel Grid.Column="1" Margin="0,0,12,0" VerticalAlignment="Top" MinWidth="150">
+				<StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+					<Label Content="Open PDF" FontWeight="Bold" FontSize="12" Width="90" VerticalAlignment="Center"/>
+					<Button x:Name="OpenPdfButton"
+							FontFamily="Segoe Fluent Icons"
+							Content="&#xE8A5;"
+							Height="36" Width="36"
+							FontSize="18"
+							Click="OpenPdfButton_Click"
+							ToolTip="Open PDF"
+							IsEnabled="False"/>
+				</StackPanel>
+				<StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+					<Label Content="Save as PDF" FontWeight="Bold" FontSize="12" Width="90" VerticalAlignment="Center"/>
+					<Button x:Name="SavePdfButton"
+							FontFamily="Segoe Fluent Icons"
+							Content="&#xEA90;"
+							Height="36" Width="36"
+							FontSize="18"
+							Click="SavePdfButton_Click"
+							ToolTip="Save as PDF"/>
+				</StackPanel>
+				<StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+					<Label Content="Text to image" FontWeight="Bold" FontSize="12" Width="90" VerticalAlignment="Center"/>
+					<Button x:Name="TextToImageButton"
+							FontFamily="Segoe Fluent Icons"
+							Content="&#xE8A5;"
+							Height="36" Width="36"
+							FontSize="18"
+							Click="TextToImageButton_Click"
+							ToolTip="Text to image"/>
+				</StackPanel>
+				<StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+					<Label Content="Open video" FontWeight="Bold" FontSize="12" Width="90" VerticalAlignment="Center"/>
+					<Button x:Name="OpenVideoButton"
+							FontFamily="Segoe Fluent Icons"
+							Content="&#xE714;"
+							Height="36" Width="36"
+							FontSize="18"
+							Click="OpenVideoButton_Click"
+							ToolTip="Open video or GIF and scrub frames"/>
+				</StackPanel>
+				<StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+					<Label Content="Export all" FontWeight="Bold" FontSize="12" Width="90" VerticalAlignment="Center"/>
+					<Button x:Name="ExportAllFramesButton"
+							FontFamily="Segoe Fluent Icons"
+							Content="&#xE8B7;"
+							Height="36" Width="36"
+							FontSize="18"
+							Click="ExportAllFramesButton_Click"
+							ToolTip="Export all frames"
+							IsEnabled="False"/>
+				</StackPanel>
+				<CheckBox x:Name="ReverseGrayscale"
+						  Content="Invert grayscale"
+						  FontWeight="Bold"
+						  FontSize="13"
+						  Checked="UpdateGrayscale"
+						  Unchecked="UpdateGrayscale"/>
+			</StackPanel>
+
+			<!-- ASCII -->
+			<Grid Grid.Column="2">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="*"/>
+					<RowDefinition Height="Auto"/>
+				</Grid.RowDefinitions>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="Auto"/>
+					<ColumnDefinition Width="*"/>
+					<ColumnDefinition Width="Auto"/>
+				</Grid.ColumnDefinitions>
+
+				<StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,0,0,8">
+					<Label Content="ASCII Characters:" FontWeight="Bold" VerticalAlignment="Center"/>
+					<Button x:Name="DefaultASCII"
+							Content="&#xE72C;"
+							FontFamily="Segoe MDL2 Assets"
+							FontSize="14"
+							Width="28" Height="28"
+							Click="DefaultASCII_Click"
+							ToolTip="Reload ASCII list"
+							Margin="8,0,0,0"/>
+				</StackPanel>
+
+				<ListBox x:Name="ASCIIcharsBox"
+						 Grid.Row="1"
+						 Grid.Column="0"
+						 Width="64"
+						 Margin="0,0,8,0"
+						 HorizontalContentAlignment="Center">
+					<TextBox Text="#" Width="25" FontSize="20" MaxLength="1"/>
+				</ListBox>
+
+				<Menu x:Name="ASCIISetPicker"
+					  Grid.Row="1"
+					  Grid.Column="1"
+					  VerticalAlignment="Top"
+					  FontSize="14">
+					<MenuItem Header="Default" Click="MenuItem_Click"/>
+				</Menu>
+
+				<Button x:Name="CopyText"
+						Grid.Row="1"
+						Grid.Column="2"
+						FontFamily="Segoe Fluent Icons"
+						Content="&#xE8C8;"
+						Height="44" Width="44"
+						FontSize="28"
+						Click="CopyText_Click"
+						ToolTip="Copy text"
+						VerticalAlignment="Top"
+						Margin="8,0,0,0"/>
+
+				<StackPanel Grid.Row="2"
+							Grid.Column="0"
+							Orientation="Horizontal"
+							HorizontalAlignment="Center"
+							Margin="0,8,0,0">
+					<Button x:Name="SubtractCharacter"
+							Content="-"
+							Width="24" Height="24"
+							Click="SubtractCharacter_Click"
+							FontSize="14"/>
+					<Button x:Name="SyncButton"
+							Content="&#xE895;"
+							FontFamily="Segoe MDL2 Assets"
+							FontSize="14"
+							Width="24" Height="24"
+							Click="SyncButton_Click"
+							Margin="6,0"
+							ToolTip="Apply ASCII characters"/>
+					<Button x:Name="AddCharacter"
+							Content="+"
+							Width="24" Height="24"
+							Click="AddCharacter_Click"
+							FontSize="14"/>
+				</StackPanel>
+			</Grid>
+		</Grid>
+
+		<!-- Status -->
+		<StackPanel Grid.Row="3" Margin="0,8,0,0">
+			<TextBlock x:Name="VideoExportProgressText"
+					   FontSize="11"
+					   Visibility="Collapsed"
+					   Margin="0,0,0,4"/>
+			<ProgressBar x:Name="VideoExportProgressBar"
+						 Height="12"
+						 Minimum="0"
+						 Maximum="100"
+						 Value="0"
+						 Visibility="Collapsed"/>
+		</StackPanel>
 	</Grid>
 </Window>

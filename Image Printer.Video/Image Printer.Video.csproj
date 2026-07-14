@@ -1,12 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<OutputType>Exe</OutputType>
-		<RootNamespace>Un_Text_Filer</RootNamespace>
-		<StartupObject>Un_Text_Filer.Program</StartupObject>
+		<OutputType>Library</OutputType>
+		<RootNamespace>Image_Printer.Video</RootNamespace>
 		<Platforms>AnyCPU;x64;x86;ARM64</Platforms>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="OpenCvSharp4.Windows" />
 		<PackageReference Include="System.Drawing.Common" />
 	</ItemGroup>
 
