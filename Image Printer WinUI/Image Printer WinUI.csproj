@@ -14,18 +14,32 @@
 		<WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
 		<AppxBundle>Never</AppxBundle>
 		<GenerateAppInstallerFile>False</GenerateAppInstallerFile>
-		<!-- Local sideload only: sign when a cert thumbprint is configured. Store upload packages must be unsigned (Store re-signs). -->
-		<AppxPackageSigningEnabled Condition="'$(PackageCertificateThumbprint)' != ''">True</AppxPackageSigningEnabled>
-		<AppxPackageSigningEnabled Condition="'$(PackageCertificateThumbprint)' == ''">False</AppxPackageSigningEnabled>
+		<!-- NEVER enable signing in this project for Store uploads. Signing with ImagePrinter_TemporaryKey
+		     (CN=jrsco) rewrites Identity Publisher and PFN; Partner Center then rejects the package.
+		     Use unpackaged F5 for daily work. Sideload: set -p:EnableSideloadSigning=true with a thumbprint. -->
+		<AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
+		<AppxPackageSigningEnabled Condition="'$(EnableSideloadSigning)' == 'true' and '$(PackageCertificateThumbprint)' != ''">True</AppxPackageSigningEnabled>
 		<AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<!-- Do not generate/sign with CN=jrsco TemporaryKey — that overwrites Store Identity Publisher. -->
 		<GenerateTemporaryStoreCertificate>False</GenerateTemporaryStoreCertificate>
+		<!-- Avoid failing Store builds when mspdbcmf.exe (VS symbols tool) is missing from the SDK. -->
+		<AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
 		<AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
 		<GenerateTestArtifacts>True</GenerateTestArtifacts>
 		<HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-		<AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+		<StoreIdentityPublisher>CN=A519B659-ED57-43B1-8525-0358CED8D6F5</StoreIdentityPublisher>
 	</PropertyGroup>
+
+	<!-- VS Create App Packages wizard often re-sets AppxPackageSigningEnabled=True + CN=jrsco thumbprint.
+	     Clear those before packaging unless EnableSideloadSigning=true (local sideload only). -->
+	<Target Name="ForceUnsignedStoreIdentity" BeforeTargets="_GenerateAppxManifest;_GenerateAppxPackage;GenerateAppxPackage" Condition="'$(EnableSideloadSigning)' != 'true'">
+		<PropertyGroup>
+			<AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
+			<PackageCertificateThumbprint />
+			<PackageCertificateKeyFile />
+		</PropertyGroup>
+		<Message Importance="high" Text="MSIX packaging: signing disabled so Publisher stays $(StoreIdentityPublisher)." />
+	</Target>
 
 	<!-- Platform-specific RuntimeIdentifiers -->
 	<PropertyGroup Condition="'$(Platform)' == 'x86'">

@@ -1,7 +1,10 @@
-# Generates a local code-signing cert (CN=jrsco) for packaged WinUI deploy,
-# trusts it for sideload, and writes PackageCertificateThumbprint into *.csproj.user.
+# Generates a local code-signing cert (CN=jrsco) for SIDELOAD only.
 # Prefer: Debug with launch profile "Image Printer WinUI (Unpackaged)" (no cert needed).
-# For Package profile: run this script once (elevated recommended).
+#
+# DO NOT use this cert when creating Microsoft Store (.msixupload) packages.
+# Signing as CN=jrsco rewrites Identity Publisher/PFN and Partner Center rejects the upload.
+# Store builds must stay unsigned (AppxPackageSigningEnabled=false).
+# Sideload with this cert: msbuild -p:EnableSideloadSigning=true (and thumbprint below).
 $ErrorActionPreference = "Stop"
 $projectDir = $PSScriptRoot
 $pfxPath = Join-Path $projectDir "ImagePrinter_TemporaryKey.pfx"
