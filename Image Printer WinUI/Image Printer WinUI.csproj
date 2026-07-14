@@ -14,11 +14,17 @@
 		<WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
 		<AppxBundle>Never</AppxBundle>
 		<GenerateAppInstallerFile>False</GenerateAppInstallerFile>
-		<!-- Signed MSIX required for packaged F5 deploy. Set PackageCertificateThumbprint in *.csproj.user (gitignored) after Generate-DevCertificate.ps1. -->
+		<!-- Local sideload only: sign when a cert thumbprint is configured. Store upload packages must be unsigned (Store re-signs). -->
 		<AppxPackageSigningEnabled Condition="'$(PackageCertificateThumbprint)' != ''">True</AppxPackageSigningEnabled>
 		<AppxPackageSigningEnabled Condition="'$(PackageCertificateThumbprint)' == ''">False</AppxPackageSigningEnabled>
 		<AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<!-- Do not generate/sign with CN=jrsco TemporaryKey — that overwrites Store Identity Publisher. -->
+		<GenerateTemporaryStoreCertificate>False</GenerateTemporaryStoreCertificate>
+		<AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+		<GenerateTestArtifacts>True</GenerateTestArtifacts>
+		<HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
+		<AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
 	</PropertyGroup>
 
 	<!-- Platform-specific RuntimeIdentifiers -->

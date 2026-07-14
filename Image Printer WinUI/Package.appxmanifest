@@ -8,15 +8,15 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="0e39eb40-f171-41a7-9399-3eef5493908e"
-    Publisher="CN=jrsco"
-    Version="1.0.1.0" />
+    Name="JakeScott.175538CBD299B"
+    Publisher="CN=A519B659-ED57-43B1-8525-0358CED8D6F5"
+    Version="1.6.3.0" />
 
-  <mp:PhoneIdentity PhoneProductId="0e39eb40-f171-41a7-9399-3eef5493908e" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="e3685abd-1134-4b6e-9163-5574adc84dd7" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>Image Printer</DisplayName>
-    <PublisherDisplayName>jrsco</PublisherDisplayName>
+    <PublisherDisplayName>Jake Scott</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
