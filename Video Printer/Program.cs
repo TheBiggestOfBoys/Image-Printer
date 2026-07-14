@@ -1,15 +1,17 @@
-﻿using Image_Printer;
-using OpenCvSharp;
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
 using System.Threading;
+
+using Image_Printer;
+
+using OpenCvSharp;
 
 namespace Video_Printer
 {
 	internal class Program
 	{
-		static void Main()
+		private static void Main()
 		{
 			// Path is relative to working directory of the app
 			string outputPath = Directory.GetCurrentDirectory() + "\\Frames";
@@ -34,7 +36,7 @@ namespace Video_Printer
 				}
 				// Save image to disk.
 				string exportPath = $"{outputPath}\\frame{i}.png";
-				Cv2.ImWrite(exportPath, image);
+				_ = Cv2.ImWrite(exportPath, image);
 				Console.WriteLine($"Successfully saved frame {i} to disk.");
 
 				frames[i] = Bitmap.FromFile(exportPath) as Bitmap;

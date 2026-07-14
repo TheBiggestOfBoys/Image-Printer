@@ -1,18 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>Video_Printer</RootNamespace>
-    <StartupObject>Video_Printer.Program</StartupObject>
-    <Platforms>AnyCPU;x64;x86;ARM64</Platforms>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="OpenCvSharp4.Windows" />
-    <PackageReference Include="System.Drawing.Common" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Frames\" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Image Printer\Image Printer.csproj" />
-  </ItemGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>Video_Printer</RootNamespace>
+		<StartupObject>Video_Printer.Program</StartupObject>
+		<Platforms>AnyCPU;x64;x86;ARM64</Platforms>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="OpenCvSharp4.Windows" />
+		<PackageReference Include="System.Drawing.Common" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<Folder Include="Frames\" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\Image Printer\Image Printer.csproj" />
+	</ItemGroup>
 </Project>

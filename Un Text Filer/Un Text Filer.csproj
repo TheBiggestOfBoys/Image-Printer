@@ -1,22 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>Un_Text_Filer</RootNamespace>
+		<StartupObject>Un_Text_Filer.Program</StartupObject>
+		<Platforms>AnyCPU;x64;x86;ARM64</Platforms>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>Un_Text_Filer</RootNamespace>
-    <StartupObject>Un_Text_Filer.Program</StartupObject>
-    <Platforms>AnyCPU;x64;x86;ARM64</Platforms>
-  </PropertyGroup>
+	<ItemGroup>
+		<Folder Include="GrayScale Images\" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="GrayScale Images\" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="System.Drawing.Common" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Image Printer\Image Printer.csproj" />
-  </ItemGroup>
-
+	<ItemGroup>
+		<ProjectReference Include="..\Image Printer\Image Printer.csproj" />
+	</ItemGroup>
 </Project>

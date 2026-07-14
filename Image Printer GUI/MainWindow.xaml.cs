@@ -1,6 +1,4 @@
-﻿using Image_Printer;
-using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -14,6 +12,10 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 
+using Image_Printer;
+
+using Microsoft.Win32;
+
 namespace Image_Printer_GUI
 {
 	/// <summary>
@@ -26,7 +28,7 @@ namespace Image_Printer_GUI
 		/// Generates a filter for the file selection, sorting by all supported image types in the `Bitmap` class
 		/// </summary>
 		/// <returns>A string which is used to filter the selectable files</returns>
-		static string GenerateFilter()
+		private static string GenerateFilter()
 		{
 			Dictionary<ImageFormat, string> formats = new()
 			{
@@ -54,7 +56,7 @@ namespace Image_Printer_GUI
 		/// <summary>
 		/// The 'Open File' dialog parameters
 		/// </summary>
-		static readonly OpenFileDialog openImageDialog = new()
+		private static readonly OpenFileDialog openImageDialog = new()
 		{
 			Filter = GenerateFilter(),
 			Title = "Open image",
@@ -64,7 +66,7 @@ namespace Image_Printer_GUI
 		/// <summary>
 		/// The 'Save File' dialog parameters for '.txt' files
 		/// </summary>
-		static readonly SaveFileDialog saveTextFileDialog = new()
+		private static readonly SaveFileDialog saveTextFileDialog = new()
 		{
 			Filter = "Text File|*.txt",
 			Title = "Save the ASCII as a Text File",
@@ -77,7 +79,7 @@ namespace Image_Printer_GUI
 		/// <summary>
 		/// The `ImagePrinter` object which will convert the image to ASCII
 		/// </summary>
-		ImagePrinter imagePrinter = new(ImagePrinter.CreateGradient());
+		private ImagePrinter imagePrinter = new(ImagePrinter.CreateGradient());
 
 		public MainWindow()
 		{
@@ -86,11 +88,11 @@ namespace Image_Printer_GUI
 
 			// Add ASCII sets
 			ASCIISetPicker.Items.Clear();
-			foreach (ImagePrinter.ASCIISet set in Enum.GetValues(typeof(ImagePrinter.ASCIISet)))
+			foreach (ImagePrinter.ASCIISet set in Enum.GetValues<ImagePrinter.ASCIISet>())
 			{
 				MenuItem item = new() { Header = set };
 				item.Click += MenuItem_Click;
-				ASCIISetPicker.Items.Add(item);
+				_ = ASCIISetPicker.Items.Add(item);
 			}
 		}
 
@@ -107,7 +109,7 @@ namespace Image_Printer_GUI
 					MaxLength = 1,
 					Text = character.ToString()
 				};
-				ASCIIcharsBox.Items.Add(textBox);
+				_ = ASCIIcharsBox.Items.Add(textBox);
 			}
 		}
 
@@ -129,7 +131,7 @@ namespace Image_Printer_GUI
 			finally
 			{
 				// Delete the GDI bitmap object
-				DeleteObject(hBitmap);
+				_ = DeleteObject(hBitmap);
 			}
 		}
 
@@ -143,7 +145,7 @@ namespace Image_Printer_GUI
 		private void ResolutionValue_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
 		{
 			ResolutionValue.Value = Math.Round(ResolutionValue.Value, 2);
-			if (PercentageBox != null) PercentageBox.Text = (ResolutionValue.Value * 100).ToString();
+			_ = (PercentageBox?.Text = (ResolutionValue.Value * 100).ToString());
 			imagePrinter.UpdateResolution(ResolutionValue.Value);
 			ImagePreview.Source = CreatePreviewImage(imagePrinter.Picture);
 		}
@@ -191,11 +193,22 @@ namespace Image_Printer_GUI
 
 		#region File Opening
 		/// <summary>
-		/// Opens the exported .txt file
+		/// Opens the exported .txt file created by Save as text
 		/// </summary>
 		private void OpenTextFile_Click(object sender, RoutedEventArgs e)
 		{
-			Process.Start(new ProcessStartInfo(saveTextFileDialog.FileName) { UseShellExecute = true });
+			string path = ExportPath.Text;
+			if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+			{
+				_ = MessageBox.Show(
+					"Save as text first, then open the exported file.",
+					"Image Printer",
+					MessageBoxButton.OK,
+					MessageBoxImage.Information);
+				return;
+			}
+
+			_ = Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
 		}
 		#endregion
 
@@ -219,7 +232,7 @@ namespace Image_Printer_GUI
 				Width = 25,
 				MaxLength = 1
 			};
-			ASCIIcharsBox.Items.Add(textBox);
+			_ = ASCIIcharsBox.Items.Add(textBox);
 		}
 
 		/// <summary>
@@ -248,8 +261,8 @@ namespace Image_Printer_GUI
 		/// </summary>
 		private void MenuItem_Click(object sender, RoutedEventArgs e)
 		{
-			MenuItem item = sender as MenuItem;
-			imagePrinter.SetASCIIGrayscaleChars((ImagePrinter.ASCIISet)Enum.Parse(typeof(ImagePrinter.ASCIISet), item.Header.ToString()));
+			MenuItem? item = sender as MenuItem;
+			imagePrinter.SetASCIIGrayscaleChars(Enum.Parse<ImagePrinter.ASCIISet>(item.Header.ToString()));
 			ResetListBox();
 		}
 

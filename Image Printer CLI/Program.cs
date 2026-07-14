@@ -1,10 +1,11 @@
-using Image_Printer;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
 using System.Threading;
+
+using Image_Printer;
 
 namespace Image_Printer_CLI
 {
@@ -13,7 +14,7 @@ namespace Image_Printer_CLI
 		/// <summary>
 		/// The Main method which reads the file's path and type and calls the appropriate methods
 		/// </summary>
-		static void Main(string[] args)
+		private static void Main(string[] args)
 		{
 			string path;
 			double resolution;
@@ -24,20 +25,20 @@ namespace Image_Printer_CLI
 			{
 				do
 				{
-					Console.Write("Please paste the path to the image you want to print: ");
+					Console.Write("Open image (paste path): ");
 					path = Console.ReadLine();
 				}
 				while (!File.Exists(path));
 
-				do { Console.Write("What resolution? (1-100%): "); }
+				do { Console.Write("Resolution (1-100%): "); }
 				while (!double.TryParse(Console.ReadLine(), out resolution));
 
-				do { Console.Write("Invert Grayscale?: "); }
+				do { Console.Write("Invert grayscale (true/false): "); }
 				while (!bool.TryParse(Console.ReadLine(), out invert));
 
 				do
 				{
-					foreach (ImagePrinter.ASCIISet setOfASCII in Enum.GetValues(typeof(ImagePrinter.ASCIISet)))
+					foreach (ImagePrinter.ASCIISet setOfASCII in Enum.GetValues<ImagePrinter.ASCIISet>())
 					{
 						Console.WriteLine(setOfASCII);
 					}
@@ -50,7 +51,7 @@ namespace Image_Printer_CLI
 				path = args[0];
 				resolution = double.Parse(args[1]);
 				invert = bool.Parse(args[2]);
-				set = (ImagePrinter.ASCIISet)Enum.Parse(typeof(ImagePrinter.ASCIISet), args[3]);
+				set = Enum.Parse<ImagePrinter.ASCIISet>(args[3]);
 			}
 
 			string name = Path.GetFileNameWithoutExtension(path);
@@ -61,7 +62,7 @@ namespace Image_Printer_CLI
 			if (img.RawFormat.Equals(ImageFormat.Gif))
 			{
 				string folder = parentDirectory + name + '\\';
-				Directory.CreateDirectory(folder);
+				_ = Directory.CreateDirectory(folder);
 
 				// Number of frames
 				int frameCount = img.GetFrameCount(FrameDimension.Time);
@@ -72,7 +73,7 @@ namespace Image_Printer_CLI
 				for (int i = 0; i < frameCount; i++)
 				{
 					// Return an Image at a certain index
-					img.SelectActiveFrame(FrameDimension.Time, i);
+					_ = img.SelectActiveFrame(FrameDimension.Time, i);
 					gifFrames[i] = img.Clone() as Bitmap;
 				}
 

@@ -80,7 +80,7 @@ namespace Image_Printer
 
 		public readonly string Name;
 
-		public string FileName => $"{Name} {Resolution}%" + (Invert ? " Inverted" : string.Empty) + ".txt";
+		public string FileName => $"{Name} {Resolution:P}" + (Invert ? " Inverted" : string.Empty) + ".txt";
 
 		#region ASCII Set
 		/// <summary>
@@ -88,18 +88,21 @@ namespace Image_Printer
 		/// </summary>
 		public ASCIISet SelectedASCIISet { get; private set; } = ASCIISet.Default;
 
-		private List<char> ChangeASCIISet() => SelectedASCIISet switch
+		private List<char> ChangeASCIISet()
 		{
-			ASCIISet.Default => [.. OriginalASCIIGrayscaleChars],
-			ASCIISet.Numbers => [.. ASCIIGrayscaleNumbers],
-			ASCIISet.Letters => [.. ASCIIGrayscaleLetters],
-			ASCIISet.Lowercase => [.. ASCIIGrayscaleLowercaseLetters],
-			ASCIISet.Uppercase => [.. ASCIIGrayscaleUppercaseLetters],
-			ASCIISet.NumbersAndLetters => [.. ASCIIGrayscaleNumbersAndLetters],
-			ASCIISet.All => [.. ASCIIGrayscaleAll],
-			ASCIISet.Custom => [' '],
-			_ => []
-		};
+			return SelectedASCIISet switch
+			{
+				ASCIISet.Default => [.. OriginalASCIIGrayscaleChars],
+				ASCIISet.Numbers => [.. ASCIIGrayscaleNumbers],
+				ASCIISet.Letters => [.. ASCIIGrayscaleLetters],
+				ASCIISet.Lowercase => [.. ASCIIGrayscaleLowercaseLetters],
+				ASCIISet.Uppercase => [.. ASCIIGrayscaleUppercaseLetters],
+				ASCIISet.NumbersAndLetters => [.. ASCIIGrayscaleNumbersAndLetters],
+				ASCIISet.All => [.. ASCIIGrayscaleAll],
+				ASCIISet.Custom => [' '],
+				_ => []
+			};
+		}
 
 		public void SetASCIIGrayscaleChars(ASCIISet set)
 		{
@@ -128,7 +131,10 @@ namespace Image_Printer
 
 		public ImagePrinter(string filePath, double resolution, bool invert) : this(filePath, resolution)
 		{
-			if (invert) ReverseGrayscale();
+			if (invert)
+			{
+				ReverseGrayscale();
+			}
 		}
 
 		public ImagePrinter(string filePath, double resolution, bool invert, ASCIISet set) : this(filePath, resolution, invert)
@@ -151,7 +157,10 @@ namespace Image_Printer
 
 		public ImagePrinter(Bitmap image, double resolution, bool invert) : this(image, resolution)
 		{
-			if (invert) ReverseGrayscale();
+			if (invert)
+			{
+				ReverseGrayscale();
+			}
 		}
 
 		public ImagePrinter(Bitmap image, double resolution, bool invert, ASCIISet set) : this(image, resolution, invert)
@@ -209,9 +218,9 @@ namespace Image_Printer
 			{
 				for (int col = 0; col < ASCIIArray.GetLength(1); col++)
 				{
-					stringBuilder.Append(ASCIIArray[row, col]);
+					_ = stringBuilder.Append(ASCIIArray[row, col]);
 				}
-				stringBuilder.AppendLine();
+				_ = stringBuilder.AppendLine();
 			}
 			return stringBuilder.ToString();
 		}

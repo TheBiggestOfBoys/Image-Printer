@@ -1,13 +1,14 @@
-﻿using Image_Printer;
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
+
+using Image_Printer;
 
 namespace Image_Resizer
 {
 	internal class Program
 	{
-		static void Main()
+		private static void Main()
 		{
 			Console.Write("Enter Path to image: ");
 			string imagePath = Console.ReadLine();

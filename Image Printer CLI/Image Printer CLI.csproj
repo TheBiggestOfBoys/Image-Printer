@@ -1,14 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>Image_Printer_CLI</RootNamespace>
+		<StartupObject>Image_Printer_CLI.Program</StartupObject>
+		<Platforms>AnyCPU;x64;x86;ARM64</Platforms>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>Image_Printer_CLI</RootNamespace>
-    <StartupObject>Image_Printer_CLI.Program</StartupObject>
-    <Platforms>AnyCPU;x64;x86;ARM64</Platforms>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Image Printer\Image Printer.csproj" />
-  </ItemGroup>
-
+	<ItemGroup>
+		<ProjectReference Include="..\Image Printer\Image Printer.csproj" />
+	</ItemGroup>
 </Project>

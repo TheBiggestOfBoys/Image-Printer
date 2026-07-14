@@ -22,8 +22,8 @@
     <Platform Solution="*|ARM64" Project="ARM64" />
     <Platform Solution="*|x64" Project="x64" />
     <Platform Solution="*|x86" Project="x86" />
-    <Platform Solution="Debug|Any CPU" Project="ARM64" />
-    <Build Solution="Release|Any CPU" Project="false" />
+    <!-- Any CPU → x64 so F5 works on typical Intel/AMD machines (ARM64 is 0x800700d8 there) -->
+    <Platform Solution="*|Any CPU" Project="x64" />
     <Deploy Solution="*|ARM64" />
     <Deploy Solution="*|x64" />
     <Deploy Solution="*|x86" />

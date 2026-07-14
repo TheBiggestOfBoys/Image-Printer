@@ -1,10 +1,10 @@
 {
-  "profiles": {
-    "Image Printer WinUI (Package)": {
-      "commandName": "MsixPackage"
-    },
-    "Image Printer WinUI (Unpackaged)": {
-      "commandName": "Project"
-    }
-  }
+	"profiles": {
+		"Image Printer WinUI (Unpackaged)": {
+			"commandName": "Project"
+		},
+		"Image Printer WinUI (Package)": {
+			"commandName": "MsixPackage"
+		}
+	}
 }

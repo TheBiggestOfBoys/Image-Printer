@@ -1,15 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-	<OutputType>WinExe</OutputType>
-	<RootNamespace>Image_Printer_GUI</RootNamespace>
-	<Nullable>enable</Nullable>
-	<UseWPF>True</UseWPF>
-	<StartupObject>Image_Printer_GUI.App</StartupObject>
-	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	<UseWindowsForms>False</UseWindowsForms>
-	<Platforms>AnyCPU;x64;x86;ARM64</Platforms>
-  </PropertyGroup>
-  <ItemGroup>
-	  <ProjectReference Include="..\Image Printer\Image Printer.csproj" />
-  </ItemGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<RootNamespace>Image_Printer_GUI</RootNamespace>
+		<Nullable>enable</Nullable>
+		<UseWPF>True</UseWPF>
+		<StartupObject>Image_Printer_GUI.App</StartupObject>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<UseWindowsForms>False</UseWindowsForms>
+		<Platforms>AnyCPU;x64;x86;ARM64</Platforms>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\Image Printer\Image Printer.csproj" />
+	</ItemGroup>
 </Project>

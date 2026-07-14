@@ -6,7 +6,7 @@ namespace Un_Text_Filer
 {
 	internal class Program
 	{
-		static void Main()
+		private static void Main()
 		{
 			Console.Write("Enter path to '.txt' file: ");
 			string path = Console.ReadLine();

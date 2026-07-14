@@ -1,15 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <RootNamespace>Image_Printer</RootNamespace>
-    <Platforms>AnyCPU;x64;x86;ARM64</Platforms>
-  </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="Saved ASCII\**" />
-    <EmbeddedResource Remove="Saved ASCII\**" />
-    <None Remove="Saved ASCII\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" />
-  </ItemGroup>
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<RootNamespace>Image_Printer</RootNamespace>
+		<Platforms>AnyCPU;x64;x86;ARM64</Platforms>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<Compile Remove="Saved ASCII\**" />
+		<EmbeddedResource Remove="Saved ASCII\**" />
+		<None Remove="Saved ASCII\**" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="System.Drawing.Common" />
+	</ItemGroup>
 </Project>
